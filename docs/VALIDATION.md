@@ -21,20 +21,20 @@ tag, package publication or Sandbox Worker deployment was performed.
 
 ## Executed checks
 
-| Command/check                                                 | Status                      | Evidence                                                                                                             |
-| ------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| Baseline `pnpm install --frozen-lockfile` and `pnpm quality`  | PASS                        | 33 pre-change offline tests, all existing checks and audit passed                                                    |
-| Registry query for `notification-contract@0.0.4`              | PASS                        | Exact published version/integrity verified with authorized read access                                               |
-| Updated `pnpm install --frozen-lockfile`                      | PASS                        | Registry-only reproducible lockfile, no local links or fake versions                                                 |
-| Updated `pnpm quality`                                        | PASS                        | Formatting, ESLint, 62 offline tests, workflow policy, public scan and dependency audit                              |
-| `actionlint .github/workflows/*.yml`                          | PASS                        | Existing and new workflows linted with actionlint 1.7.12                                                             |
-| `git diff --check`                                            | PASS                        | No whitespace errors                                                                                                 |
-| Published CLI check of actual fixture files                   | PASS                        | CLI 0.1.0-preview.2; three supported files, zero findings                                                            |
-| Actual Cleanup bundle against local Sandbox                   | PASS                        | Exact consumer fixture and actual assertion function, two runs, matching decisions/counts, zero target mutations     |
-| Actual Deploy bundle against local Sandbox                    | PASS                        | Recreated mapped build fixture, successful actual result/event, one scoped deployment creation, zero Build API calls |
-| Configured environment read-back                              | PASS                        | Required reviewer/main-only/no-bypass settings verified independently                                                |
-| Hosted ordinary PR CI on the final feature head               | NOT RUN at report recording | Must be inspected after pushing; PR checks carry current hosted evidence                                             |
-| Hosted manual build/check/approval/deploy or cleanup workflow | NOT RUN                     | No dispatch or hosted Sandbox fixture operations authorized/performed                                                |
+| Command/check                                                 | Status  | Evidence                                                                                                                                                                                                     |
+| ------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Baseline `pnpm install --frozen-lockfile` and `pnpm quality`  | PASS    | 33 pre-change offline tests, all existing checks and audit passed                                                                                                                                            |
+| Registry query for `notification-contract@0.0.4`              | PASS    | Exact published version/integrity verified with authorized read access                                                                                                                                       |
+| Updated `pnpm install --frozen-lockfile`                      | PASS    | Registry-only reproducible lockfile, no local links or fake versions                                                                                                                                         |
+| Updated `pnpm quality`                                        | PASS    | Formatting, ESLint, 62 offline tests, workflow policy, public scan and dependency audit                                                                                                                      |
+| `actionlint .github/workflows/*.yml`                          | PASS    | Existing and new workflows linted with actionlint 1.7.12                                                                                                                                                     |
+| `git diff --check`                                            | PASS    | No whitespace errors                                                                                                                                                                                         |
+| Published CLI check of actual fixture files                   | PASS    | CLI 0.1.0-preview.2; three supported files, zero findings                                                                                                                                                    |
+| Actual Cleanup bundle against local Sandbox                   | PASS    | Exact consumer fixture and actual assertion function, two runs, matching decisions/counts, zero target mutations                                                                                             |
+| Actual Deploy bundle against local Sandbox                    | PASS    | Recreated mapped build fixture, successful actual result/event, one scoped deployment creation, zero Build API calls                                                                                         |
+| Configured environment read-back                              | PASS    | Required reviewer/main-only/no-bypass settings verified independently                                                                                                                                        |
+| Hosted ordinary PR CI on the implementation head              | PASS    | [Run 43632346842](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43632346842) on `2563fd12ad4d8588a002a7e3dd0f8ee22b69cffd`; 62 tests, frozen job-token install and audit passed |
+| Hosted manual build/check/approval/deploy or cleanup workflow | NOT RUN | No dispatch or hosted Sandbox fixture operations authorized/performed                                                                                                                                        |
 
 Final offline suite: **62 passed, zero failed/cancelled/skipped**. All existing
 16 scenario definitions and smoke/full/provider matrices remain unchanged.
@@ -118,8 +118,9 @@ gate and the two read-only configuration preflights are documented in
 A read-only GET of the public hosted `/openapi/sandbox.json` advertises
 `/sandbox/v1/runs/{runId}/cleanup-fixture` (OpenAPI 3.1.0/version 1.0.0). No hosted
 run was created to execute that handler. The web reader initially could not open
-this metadata URL; a bounded HTTPS curl read succeeded. Actual hosted fixture
-behavior, job-token package/API access, Linux CLI execution, native approval,
+this metadata URL; a bounded HTTPS curl read succeeded. Repository job-token package access is proven by the successful ordinary PR CI
+frozen install. Actual hosted fixture behavior, the new manual jobs' approval
+metadata access, Linux CLI execution, native approval,
 new hosted flow assertions and final hosted run cleanup remain **NOT RUN** until
 an explicitly authorized main-branch manual dispatch after review/merge.
 
