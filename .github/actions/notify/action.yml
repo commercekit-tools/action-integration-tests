@@ -1,0 +1,39 @@
+name: Deliver and validate producer notification
+description: Send an existing validated phase event through the pinned Notify Action.
+inputs:
+  phase:
+    description: build, initial, followup, or final
+    required: true
+  provider:
+    description: slack or teams-workflow
+    required: true
+  webhook-url:
+    description: Dedicated provider test webhook supplied from environment secrets
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Locate validated producer event
+      id: inputs
+      shell: bash
+      run: node scripts/runner.mjs notify-inputs
+      env:
+        PHASE: ${{ inputs.phase }}
+        PROVIDER: ${{ inputs.provider }}
+    - name: Deliver test notification
+      id: action
+      if: steps.inputs.outputs.enabled == 'true' && inputs.provider != 'none'
+      uses: commercekit-tools/notify@8242af6a4aaafd7917c93f0db27f1794266efeee
+      with:
+        provider: ${{ inputs.provider }}
+        event-file: ${{ steps.inputs.outputs.event-file }}
+        webhook-url: ${{ inputs.webhook-url }}
+        fail-on-notification-error: 'true'
+    - name: Record and validate delivery
+      if: ${{ always() && steps.inputs.outputs.enabled == 'true' && inputs.provider != 'none' }}
+      shell: bash
+      run: node scripts/runner.mjs record-notify
+      env:
+        PHASE: ${{ inputs.phase }}
+        PROVIDER: ${{ inputs.provider }}
+        OUTPUTS_JSON: ${{ toJSON(steps.action.outputs) }}

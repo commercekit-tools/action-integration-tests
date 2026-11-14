@@ -1,0 +1,29 @@
+name: Run and validate Build Action
+description: Execute the pinned bundled Build Action and assert its expected scenario result.
+runs:
+  using: composite
+  steps:
+    - name: Execute Build Action
+      id: action
+      continue-on-error: true
+      uses: commercekit-tools/ccv2-build@923535d589bd8cebece4f3cbf479608f9535c4c3
+      with:
+        token-endpoint: ${{ env.CCV2_TOKEN_ENDPOINT }}
+        client-id: ${{ env.CCV2_CLIENT_ID }}
+        client-secret: ${{ env.CCV2_CLIENT_SECRET }}
+        resource: ${{ env.CCV2_RESOURCE }}
+        subscription-code: '131762872233634f29fdeb7d50983aa4'
+        branch: main
+        build-name: synthetic-${{ github.run_id }}-${{ github.run_attempt }}
+        application-code: commerce
+        api-base-url: https://ccv2.sandbox.commercekit.tools
+        poll-interval-seconds: '10'
+        timeout-minutes: '1'
+    - name: Record and validate Build outputs
+      if: ${{ always() }}
+      shell: bash
+      run: node scripts/runner.mjs record
+      env:
+        PHASE: build
+        OUTPUTS_JSON: ${{ toJSON(steps.action.outputs) }}
+        ACTION_OUTCOME: ${{ steps.action.outcome }}

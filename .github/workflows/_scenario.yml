@@ -1,0 +1,114 @@
+name: One isolated integration scenario
+on:
+  workflow_call:
+    inputs:
+      scenario:
+        type: string
+        required: true
+      provider:
+        type: string
+        required: true
+      confirmation:
+        type: string
+        required: true
+      provider-confirmation:
+        type: string
+        required: false
+        default: ''
+    secrets:
+      COMMERCEKIT_SLACK_TEST_WEBHOOK_URL:
+        required: false
+      COMMERCEKIT_TEAMS_TEST_WORKFLOW_URL:
+        required: false
+permissions:
+  contents: read
+  packages: read
+jobs:
+  scenario:
+    name: ${{ inputs.scenario }} / ${{ inputs.provider }}
+    if: >-
+      github.repository == 'commercekit-tools/action-integration-tests' &&
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' &&
+      inputs.confirmation == 'RUN-COMMERCEKIT-SANDBOX-TESTS' &&
+      (inputs.provider == 'none' || inputs.provider-confirmation == 'SEND-COMMERCEKIT-TEST-NOTIFICATION')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: ${{ inputs.provider == 'none' && 'sandbox-e2e' || 'provider-smoke' }}
+    env:
+      SCENARIO: ${{ inputs.scenario }}
+      PROVIDER: ${{ inputs.provider }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+      PROVIDER_CONFIRMATION: ${{ inputs.provider-confirmation }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set private state directory for this job
+        run: printf 'STATE_DIRECTORY=%s/commercekit-integration\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+          registry-url: https://npm.pkg.github.com
+          scope: '@commercekit-tools'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create and configure one disposable Sandbox run
+        id: prepare
+        run: node scripts/runner.mjs prepare
+        env:
+          NOTIFICATION_WEBHOOK: ${{ inputs.provider == 'slack' && secrets.COMMERCEKIT_SLACK_TEST_WEBHOOK_URL || inputs.provider == 'teams-workflow' && secrets.COMMERCEKIT_TEAMS_TEST_WORKFLOW_URL || '' }}
+      - name: Build and validate producer outputs
+        id: build
+        if: steps.prepare.outcome == 'success'
+        uses: ./.github/actions/build
+      - name: Notify build outcome
+        if: ${{ always() && steps.prepare.outcome == 'success' && inputs.provider != 'none' }}
+        uses: ./.github/actions/notify
+        with:
+          phase: build
+          provider: ${{ inputs.provider }}
+          webhook-url: ${{ inputs.provider == 'slack' && secrets.COMMERCEKIT_SLACK_TEST_WEBHOOK_URL || inputs.provider == 'teams-workflow' && secrets.COMMERCEKIT_TEAMS_TEST_WORKFLOW_URL || '' }}
+      - name: Deploy the Build Action result
+        if: ${{ always() && steps.prepare.outcome == 'success' }}
+        uses: ./.github/actions/deploy
+        with:
+          phase: initial
+      - name: Notify initial deployment outcome
+        if: ${{ always() && steps.prepare.outcome == 'success' && inputs.provider != 'none' }}
+        uses: ./.github/actions/notify
+        with:
+          phase: initial
+          provider: ${{ inputs.provider }}
+          webhook-url: ${{ inputs.provider == 'slack' && secrets.COMMERCEKIT_SLACK_TEST_WEBHOOK_URL || inputs.provider == 'teams-workflow' && secrets.COMMERCEKIT_TEAMS_TEST_WORKFLOW_URL || '' }}
+      - name: Execute separate decision, resume or cancellation
+        if: ${{ always() && steps.prepare.outcome == 'success' }}
+        uses: ./.github/actions/deploy
+        with:
+          phase: followup
+      - name: Notify follow-up outcome
+        if: ${{ always() && steps.prepare.outcome == 'success' && inputs.provider != 'none' }}
+        uses: ./.github/actions/notify
+        with:
+          phase: followup
+          provider: ${{ inputs.provider }}
+          webhook-url: ${{ inputs.provider == 'slack' && secrets.COMMERCEKIT_SLACK_TEST_WEBHOOK_URL || inputs.provider == 'teams-workflow' && secrets.COMMERCEKIT_TEAMS_TEST_WORKFLOW_URL || '' }}
+      - name: Complete canary or resumed handoff
+        if: ${{ always() && steps.prepare.outcome == 'success' }}
+        uses: ./.github/actions/deploy
+        with:
+          phase: final
+      - name: Notify final deployment outcome
+        if: ${{ always() && steps.prepare.outcome == 'success' && inputs.provider != 'none' }}
+        uses: ./.github/actions/notify
+        with:
+          phase: final
+          provider: ${{ inputs.provider }}
+          webhook-url: ${{ inputs.provider == 'slack' && secrets.COMMERCEKIT_SLACK_TEST_WEBHOOK_URL || inputs.provider == 'teams-workflow' && secrets.COMMERCEKIT_TEAMS_TEST_WORKFLOW_URL || '' }}
+      - name: Assert complete flow, notifications and isolated state
+        if: ${{ always() && steps.prepare.outcome == 'success' }}
+        run: node scripts/runner.mjs assert
+      - name: Delete disposable run and verify cleanup
+        if: ${{ always() }}
+        run: node scripts/runner.mjs cleanup
+        env:
+          STATE_DIRECTORY: ${{ runner.temp }}/commercekit-integration

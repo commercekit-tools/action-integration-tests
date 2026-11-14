@@ -1,0 +1,45 @@
+name: Run and validate Deploy Action
+description: Execute one planned phase using the current deployment code from the same isolated run.
+inputs:
+  phase:
+    description: initial, followup, or final
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Resolve inputs from validated prior results
+      id: inputs
+      shell: bash
+      run: node scripts/runner.mjs deploy-inputs
+      env:
+        PHASE: ${{ inputs.phase }}
+    - name: Execute Deploy Action
+      id: action
+      if: steps.inputs.outputs.enabled == 'true'
+      continue-on-error: true
+      uses: commercekit-tools/ccv2-deploy@e2b3f4cb7e03bfbcbba22eaf84545829b5629557
+      with:
+        token-endpoint: ${{ env.CCV2_TOKEN_ENDPOINT }}
+        client-id: ${{ env.CCV2_CLIENT_ID }}
+        client-secret: ${{ env.CCV2_CLIENT_SECRET }}
+        resource: ${{ env.CCV2_RESOURCE }}
+        subscription-code: '131762872233634f29fdeb7d50983aa4'
+        operation: ${{ steps.inputs.outputs.operation }}
+        deployment-code: ${{ steps.inputs.outputs.deployment-code }}
+        build-code: ${{ steps.inputs.outputs.build-code }}
+        environment-code: ${{ steps.inputs.outputs.environment-code }}
+        database-update-mode: ${{ steps.inputs.outputs.database-update-mode }}
+        strategy: ${{ steps.inputs.outputs.strategy }}
+        green-decision: ${{ steps.inputs.outputs.green-decision }}
+        traffic-split-json: ${{ steps.inputs.outputs.traffic-split-json }}
+        api-base-url: https://ccv2.sandbox.commercekit.tools
+        poll-interval-seconds: '10'
+        timeout-minutes: '1'
+    - name: Record and validate Deploy outputs
+      if: ${{ always() && steps.inputs.outputs.enabled == 'true' }}
+      shell: bash
+      run: node scripts/runner.mjs record
+      env:
+        PHASE: ${{ inputs.phase }}
+        OUTPUTS_JSON: ${{ toJSON(steps.action.outputs) }}
+        ACTION_OUTCOME: ${{ steps.action.outcome }}
