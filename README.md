@@ -1,7 +1,7 @@
 # CommerceKit Action Integration Tests
 
 Integration coverage for the CommerceKit Build → Deploy → Notify flow against the
-public CCv2 Sandbox. This repository executes the actual, SHA-pinned Actions and
+public CCv2 Sandbox, including an approval-gated synthetic deploy and cleanup dry-run. This repository executes the actual, SHA-pinned Actions and
 uses their real outputs; it does not replace them with test implementations.
 
 Each scenario creates one disposable Sandbox run, runs the Build Action, passes
@@ -24,6 +24,31 @@ Start with [setup and dispatch](docs/SETUP.md). The [scenario reference](docs/SC
 defines expected negative outcomes and required assertions. Passing offline CI is
 not evidence that live Sandbox scenarios or provider delivery have passed.
 
+## Additional manual workflows
+
+| Workflow                                                               | Order and effect                                                                                                                                                                                 |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [build-approve-deploy.yml](.github/workflows/build-approve-deploy.yml) | Repository quality gate → CommerceKit check of three synthetic files → actual CCv2 Build Action → required approval → recreate the validated build in a fresh Sandbox run → actual Deploy Action |
+| [cleanup.yml](.github/workflows/cleanup.yml)                           | Create an isolated 105-build fixture → actual Cleanup Action in hardcoded dry-run → repeat and compare → verify zero target mutations → remove the run                                           |
+
+Both require a deliberate main-branch dispatch and
+`RUN-COMMERCEKIT-SANDBOX-TESTS`. They have no schedule, real SAP credentials,
+provider sends, publication or release steps. The approval environment is
+`sandbox-deploy-approval`: reviewer `anilkreddy`, own-run approval allowed, main
+only, administrator bypass disabled. Its settings are verified before the build
+and again before preparing the approved deployment run.
+
+The repository stage runs this JavaScript harness's existing `pnpm quality` gate;
+it does not compile a customer Commerce application. CommerceKit CLI
+`0.1.0-preview.2` checks real supported fixture files. Only a validated build code
+crosses jobs; source-run credentials are never exported or uploaded. Approval
+starts a fresh synthetic run, with the source code mapped to an `approved-...`
+fixture identifier because the Sandbox fixture API does not accept dots in keys.
+
+See [workflow setup, dispatch and limits](docs/WORKFLOWS.md). In particular,
+merged Sandbox source does not prove that the hosted `/cleanup-fixture` endpoint
+is deployed. Live workflow results are recorded separately from offline tests.
+
 ## Development
 
 Use Node 24 and pnpm 12.6.0, then configure local GitHub Packages read access as
@@ -37,9 +62,10 @@ pnpm quality
 
 Shared schema validation and CCv2 HTTP/authentication come from the existing
 `@commercekit-tools/notification-contract` and `@commercekit-tools/ccv2-client`
-packages, pinned to `0.0.3`. These package versions are separate from Action
-versions. Actual Action pins live once each in the composite wrappers under
-`.github/actions/`.
+packages, pinned to `0.0.4` and `0.0.3` respectively. These package versions are separate from Action
+versions. Action revisions are catalogued in `action-refs.json`. Producer pins live in
+the composite wrappers under `.github/actions/`; CLI setup is pinned in the
+build/approval workflow.
 
 See [Contributing](CONTRIBUTING.md), [agent guidance](AGENTS.md), and the
 [security policy](SECURITY.md) before changing the harness.

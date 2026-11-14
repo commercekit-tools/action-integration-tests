@@ -13,8 +13,8 @@ commits. This setup does not deploy the Sandbox or release any Action.
 3. Allow the declared `contents: read` and `packages: read` job permissions. The
    workflows need no contents-write, release, or package-publish permission.
 4. In each shared package's **Manage Actions access**, grant this repository
-   **Read** access to `notification-contract` and `ccv2-client`. Both are pinned
-   exactly to `0.0.3`. A successful install with an owner's local credential does
+   **Read** access to `notification-contract` and `ccv2-client`. The contract is pinned
+   exactly to `0.0.4` and the client to `0.0.3`. A successful install with an owner's local credential does
    not prove the repository's workflow token has package access.
 5. Create/configure the environments below before the first live dispatch.
 
@@ -186,3 +186,11 @@ This repository has no Marketplace, Action-tagging, GitHub Release, or package
 publication workflow. Its token permissions are read-only. Passing tests here
 does not release Notify, Build, or Deploy; release remains a separate decision in
 their owning repositories.
+
+## Approval-gated build/deploy and cleanup
+
+The additional `build-approve-deploy.yml` and `cleanup.yml` workflows are manual,
+main-only Sandbox integrations. Their exact order, native approval environment,
+synthetic handoff, cleanup expectations and dispatch commands are in
+[WORKFLOWS.md](WORKFLOWS.md). No permanent SAP or Sandbox secrets are required.
+The existing smoke/full/provider suites and their environments remain unchanged.

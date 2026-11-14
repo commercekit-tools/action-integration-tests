@@ -3,5 +3,7 @@
   "actions/setup-node": "949feb2413d6458794dcd2491c4babbbce0c15c1",
   "commercekit-tools/ccv2-build": "923535d589bd8cebece4f3cbf479608f9535c4c3",
   "commercekit-tools/ccv2-deploy": "e2b3f4cb7e03bfbcbba22eaf84545829b5629557",
-  "commercekit-tools/notify": "8242af6a4aaafd7917c93f0db27f1794266efeee"
+  "commercekit-tools/notify": "8242af6a4aaafd7917c93f0db27f1794266efeee",
+  "commercekit-tools/ccv2-build-cleanup": "4ab51d33ded51a360e8223e686bb46918cf7863f",
+  "commercekit-tools/setup-commercekit": "7f650f3162ab027bfd784cf879832f44d3248584"
 }
