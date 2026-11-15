@@ -1,6 +1,6 @@
 {
   "commercekit-tools/ccv2-build": {
-    "ref": "a4e4ede0ffba3f3fec6b16ea1c2324375d383940",
+    "ref": "fc65ee281f39b98d2cecad36ff93d40cf055fbc2",
     "inputs": [
       "token-endpoint",
       "client-id",
@@ -16,7 +16,7 @@
     ]
   },
   "commercekit-tools/ccv2-deploy": {
-    "ref": "9486574b5abc7a9d85ec2809b03a02380dcf7ee2",
+    "ref": "1af852b9a00e981da4ea13565bb18c7ce7fda27f",
     "inputs": [
       "operation",
       "token-endpoint",

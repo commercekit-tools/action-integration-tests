@@ -17,7 +17,7 @@ runs:
       id: action
       if: steps.inputs.outputs.enabled == 'true'
       continue-on-error: true
-      uses: commercekit-tools/ccv2-deploy@9486574b5abc7a9d85ec2809b03a02380dcf7ee2
+      uses: commercekit-tools/ccv2-deploy@1af852b9a00e981da4ea13565bb18c7ce7fda27f
       with:
         token-endpoint: ${{ env.CCV2_TOKEN_ENDPOINT }}
         client-id: ${{ env.CCV2_CLIENT_ID }}

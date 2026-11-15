@@ -6,7 +6,7 @@ runs:
     - name: Execute Build Action
       id: action
       continue-on-error: true
-      uses: commercekit-tools/ccv2-build@a4e4ede0ffba3f3fec6b16ea1c2324375d383940
+      uses: commercekit-tools/ccv2-build@fc65ee281f39b98d2cecad36ff93d40cf055fbc2
       with:
         token-endpoint: ${{ env.CCV2_TOKEN_ENDPOINT }}
         client-id: ${{ env.CCV2_CLIENT_ID }}
