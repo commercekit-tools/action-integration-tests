@@ -8,7 +8,6 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as contract from '@commercekit-tools/notification-contract';
 import { createRequire } from 'node:module';
-import { parse as parseYaml } from 'yaml';
 const requirePublic = createRequire(import.meta.url);
 const metadata = requirePublic('@commercekit-tools/notification-contract/package.json');
 const publicSchema = requirePublic('@commercekit-tools/notification-contract/schema');
@@ -16,6 +15,7 @@ import {
   actionMetadata,
   assertReportingManifest,
   assertRegistryInstall,
+  parseRegistryLock,
   assertLoopbackOrigin,
   assertSummary,
   reportingActionNames,
@@ -138,7 +138,7 @@ async function verifyArtifacts(manifest) {
   const own = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
   assertRegistryInstall(
     own,
-    parseYaml(await readFile(join(root, 'pnpm-lock.yaml'), 'utf8')),
+    parseRegistryLock(await readFile(join(root, 'pnpm-lock.yaml'), 'utf8')),
     manifest.contract,
   );
   const tarballStat = await lstat(manifest.contract.tarball);
@@ -206,7 +206,7 @@ async function verifyArtifacts(manifest) {
       const consumer = JSON.parse(await readFile(join(item.consumerPath, 'package.json'), 'utf8'));
       assertRegistryInstall(
         consumer,
-        parseYaml(await readFile(join(item.consumerPath, 'pnpm-lock.yaml'), 'utf8')),
+        parseRegistryLock(await readFile(join(item.consumerPath, 'pnpm-lock.yaml'), 'utf8')),
         manifest.contract,
       );
       assert.deepEqual(

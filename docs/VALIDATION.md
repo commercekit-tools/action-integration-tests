@@ -7,13 +7,15 @@ published notification-contract 0.0.6 from main
 `3fecce40414d709884fa48e48eca278f470b20b0`. This harness now installs exact
 registry 0.0.6 with client 0.0.3 unchanged. Frozen installation, independent
 registry tarball SHA256/SRI/byte proof and the complete ordinary `pnpm quality`
-passed: **72 offline tests, zero skips**, format/lint, unchanged workflow policy,
+passed: **73 offline tests, zero skips**, format/lint, unchanged workflow policy,
 public scan and audit with no known vulnerabilities.
 
 The local reporting command now requires normal registry manifests/locks and
-installed public package bytes; candidate-only overrides were retired. The
-combined five normal registry bundle replay and final reviewed merged Action
-pins are in progress. See [current reporting evidence](REPORTING.md); prior
+installed public package bytes; candidate-only overrides were retired. An early combined five normal registry bundle replay passed all 24 records on
+clean reviewed branch heads. The first attempt exposed pnpm 12 multi-document
+lock parsing before any target call; strict graph selection and a dedicated
+regression test resolved it. Final reviewed merged Action pins/replay are in
+progress. See [current reporting evidence](REPORTING.md); prior
 source-candidate evidence remains [historical](REPORTING-CANDIDATES.md). New
 hosted dispatches and live provider/SAP validation have not run.
 

@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { copyFile, lstat, mkdir, readFile, writeFile } from 'node:fs/promises';
 import https from 'node:https';
 import { isAbsolute, join, resolve } from 'node:path';
-import { parse } from 'yaml';
+import { parse, parseAllDocuments } from 'yaml';
 
 export const reportingActionNames = Object.freeze([
   'setup-commercekit',
@@ -61,6 +61,23 @@ export function assertRegistryTarball(value) {
     ),
   );
   return url.href;
+}
+
+/** pnpm 12 stores package-manager and application graphs as separate YAML documents. */
+export function parseRegistryLock(text) {
+  const documents = parseAllDocuments(text);
+  assert(documents.length >= 1 && documents.length <= 2);
+  assert(documents.every((document) => document.errors.length === 0));
+  const graphs = documents.map((document) => document.toJS());
+  assert(graphs.every((graph) => graph?.lockfileVersion === '9.0'));
+  const app = graphs.filter((graph) =>
+    Object.hasOwn(
+      graph.importers?.['.']?.dependencies ?? {},
+      '@commercekit-tools/notification-contract',
+    ),
+  );
+  assert.equal(app.length, 1, 'Exactly one application dependency graph is required.');
+  return app[0];
 }
 
 /** A frozen normal registry dependency must match the reviewed public artifact. */

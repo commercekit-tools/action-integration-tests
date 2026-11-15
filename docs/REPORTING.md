@@ -136,8 +136,12 @@ payloads. Fixture/control operations are separate from Cleanup target mutations.
 - PASS: complete ordinary normal-registry `pnpm quality`, 72 offline tests and
   zero skips; formatting, lint, unchanged workflow policy, public scan and full
   dependency audit passed with no known vulnerabilities.
-- NOT RUN: combined five normal registry bundle suite until all reviewed
-  consumers are rebuilt.
+- PASS: early combined five normal registry bundles on clean reviewed branch
+  heads, 24 records in 56,513 ms; four isolated runs created/removed with absence
+  verified, Cleanup zero target mutations, Setup zero network calls and strict
+  provider mocks. [Safe early evidence](reporting-registry-branch-evidence.json)
+  records exact normal source/bundle/lock proofs. Final merged-main pins and
+  their replay remain pending.
 - NOT RUN: new hosted Sandbox/provider workflows, real SAP validation.
 - BLOCKED: real SAP apply eligibility, operational review and separate owner
   non-production/release approvals. Green tests do not authorize real deletion.
@@ -146,3 +150,20 @@ Hosted workflow pins will be updated only to the actual reviewed merged main
 commits after their validation passes. No future/unmerged commit is presented
 as an adopted hosted Action. Package publication does not create an Action
 release, Git tag, deployment or permission for SAP operations.
+
+## Normal-registry preflight correction
+
+The first normal opt-in attempt stopped before starting any local Worker or
+Action process: pnpm 12 locks contain separate package-manager and application
+YAML documents. The harness now parses the bounded document set and requires
+exactly one application graph containing the pinned contract; duplicate, missing
+or malformed graphs are rejected. A dedicated regression test covers both
+normal pnpm 12 and single-document locks. The corrected normal run passed all
+24 actual bundled cases. This was a test-tooling compatibility fix, not a
+consumer failure or package-integrity drift.
+
+The early registry run used clean normal Action source heads and real published
+0.0.6 dependencies/bundles. Its harness proof honestly records base commit
+`b1dd29a167289b083688b2ad45ddb492bcc5190a` with the parser correction dirty at
+execution time. The recorded runner-code hashes match the correction committed
+after validation. Final merged-main validation will be recorded separately.

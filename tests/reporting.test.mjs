@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import {
   assertReportingManifest,
   assertRegistryInstall,
+  parseRegistryLock,
   assertLoopbackOrigin,
   assertSummary,
   reportingActionNames,
@@ -305,4 +306,24 @@ test('registry installation proof rejects local links, ranges, integrity drift a
     mutate(changed);
     assert.throws(() => assertRegistryInstall(pkg, changed, artifact));
   }
+});
+
+test('normal registry proof selects the pnpm 12 application graph and rejects ambiguous lock documents', () => {
+  const application =
+    "lockfileVersion: '9.0'\nimporters:\n  .:\n    dependencies:\n      '@commercekit-tools/notification-contract':\n        specifier: 0.0.6\n        version: 0.0.6\n";
+  const manager =
+    "lockfileVersion: '9.0'\nimporters:\n  .:\n    packageManagerDependencies:\n      pnpm:\n        version: 12.6.0\n";
+  const selected = parseRegistryLock('---\n' + manager + '---\n' + application);
+  assert.equal(
+    selected.importers['.'].dependencies['@commercekit-tools/notification-contract'].version,
+    '0.0.6',
+  );
+  assert.deepEqual(parseRegistryLock(application), selected);
+  for (const text of [
+    manager,
+    '---\n' + application + '---\n' + application,
+    'lockfileVersion: [invalid',
+    application.replace('9.0', '8.0'),
+  ])
+    assert.throws(() => parseRegistryLock(text));
 });
