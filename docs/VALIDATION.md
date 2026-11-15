@@ -14,10 +14,23 @@ The local reporting command now requires normal registry manifests/locks and
 installed public package bytes; candidate-only overrides were retired. An early combined five normal registry bundle replay passed all 24 records on
 clean reviewed branch heads. The first attempt exposed pnpm 12 multi-document
 lock parsing before any target call; strict graph selection and a dedicated
-regression test resolved it. Final reviewed merged Action pins/replay are in
-progress. See [current reporting evidence](REPORTING.md); prior
+regression test resolved it. Final reviewed merged Action pins passed a new
+24-record replay in **55,745 ms** from clean committed harness
+`a4224df787c277b88deb1458eaa9162e6838967c`; every source was clean and matched
+the adopted immutable ref. Four disposable runs were removed with absence
+verified, both Cleanup passes made zero target mutations, Setup invalid input
+made zero network calls, and all 16 provider requests were mocked. See
+[final safe evidence](reporting-registry-main-evidence.json) and
+[current reporting evidence](REPORTING.md); prior
 source-candidate evidence remains [historical](REPORTING-CANDIDATES.md). New
 hosted dispatches and live provider/SAP validation have not run.
+
+The final Build/Deploy pins include narrow test-only CodeQL corrections. Their
+initial green jobs had two/three processed findings; final exact-main analyses
+now contain zero results and zero open alerts. All six repositories have green
+main validation/CodeQL and clear processed analyses. The combined report also
+records Setup's existing OrganizationAdmin merge exception, without suggesting
+that review was fabricated or protection changed.
 
 ## Historical 0.0.4 baseline and hosted workflow evidence
 

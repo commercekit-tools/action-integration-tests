@@ -146,10 +146,14 @@ payloads. Fixture/control operations are separate from Cleanup target mutations.
   was committed as `089b7fae37497ddb0cd2bf4dfc0e2b3d4fe3bba3`.
   [Initial-main evidence](reporting-registry-initial-main-evidence.json) is
   retained separately from the final security-follow-up replay.
-- PENDING: final security-follow-up main replay. Both narrow test-only fixes
-  have merged after green validation and processed zero-finding PR analyses;
-  Build exact-main analysis is also clear. Green job conclusions alone do
-  not establish zero findings.
+- PASS: final security-follow-up main replay, **24 records in 55,745 ms**,
+  from clean committed harness `a4224df787c277b88deb1458eaa9162e6838967c`
+  against all five final main revisions below.
+  [Final safe evidence](reporting-registry-main-evidence.json) records exact
+  source/tree/bundle/registry/input-metadata/runner-code hashes. All sources
+  were clean, four runs were removed with absence verified, both Cleanup
+  passes had zero target mutations, Setup had zero network calls, and all
+  16 provider calls were mock-only.
 - NOT RUN: new hosted Sandbox/provider workflows, real SAP validation.
 - BLOCKED: real SAP apply eligibility, operational review and separate owner
   non-production/release approvals. Green tests do not authorize real deletion.
@@ -195,50 +199,74 @@ files. Final security-follow-up main validation is recorded separately.
 Each source was checked out separately at its exact main commit and installed
 with normal frozen registry dependencies. No owner working tree was replaced,
 no file:tarball dependency was used, and no hosted workflow was dispatched. The
-initial all-five main replay is archived above; final security-follow-up main
-refs and their replay will be recorded after execution.
+initial all-five main replay is archived above; the final security-follow-up
+main replay passed separately, with every source matching the adopted refs.
 
 ## Post-merge security verification
 
-The initial merged Build/Deploy validation and CodeQL jobs were green, but the
-processed main analyses reported two and three `js/bad-code-sanitization`
-findings respectively, in test-generated JavaScript preloads. Those findings
-were an explicit final-adoption gate and are resolved by the narrow follow-ups. The follow-up uses static preload files
-with data passed through child environment variables; the runtime bundles are
-independently verified again in the final local replay. A green CodeQL job is
-not presented as proof of zero findings.
+The initial merged Build/Deploy jobs were green, but processed main analyses
+`2169885840` and `2169885904` contained two and three
+`js/bad-code-sanitization` findings in test-generated JavaScript preloads.
+Those findings blocked final adoption. Narrow test-only
+[Build PR #10](https://github.com/commercekit-tools/ccv2-build/pull/10) and
+[Deploy PR #11](https://github.com/commercekit-tools/ccv2-deploy/pull/11)
+replaced interpolation with static preload files and child-environment data.
+Both merged only after complete validation and processed zero-finding PR
+analyses. Their production bundles retained the independently recorded hashes;
+the final local replay verified those exact main sources and bundles again.
 
-| Repository           | Main validation                                                                                 | CodeQL job                                                                                      | Initial processed analysis | Findings at initial analysis    |
-| -------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | -------------------------- | ------------------------------- |
-| action-kit           | [43677942127](https://github.com/commercekit-tools/action-kit/actions/runs/43677942127)         | [43677942074](https://github.com/commercekit-tools/action-kit/actions/runs/43677942074)         | `2169851728`               | 0                               |
-| Notify               | [43679092935](https://github.com/commercekit-tools/notify/actions/runs/43679092935)             | [43679092926](https://github.com/commercekit-tools/notify/actions/runs/43679092926)             | `2169885501`               | 0                               |
-| Setup                | [43679114996](https://github.com/commercekit-tools/setup-commercekit/actions/runs/43679114996)  | [43679114994](https://github.com/commercekit-tools/setup-commercekit/actions/runs/43679114994)  | `2169886190`               | 0                               |
-| Cleanup              | [43679344145](https://github.com/commercekit-tools/ccv2-build-cleanup/actions/runs/43679344145) | [43679344327](https://github.com/commercekit-tools/ccv2-build-cleanup/actions/runs/43679344327) | `2169892997`               | 0                               |
-| Build, initial main  | [43679098958](https://github.com/commercekit-tools/ccv2-build/actions/runs/43679098958)         | [43679098963](https://github.com/commercekit-tools/ccv2-build/actions/runs/43679098963)         | `2169885840`               | 2, resolved by test-only PR #10 |
-| Deploy, initial main | [43679105484](https://github.com/commercekit-tools/ccv2-deploy/actions/runs/43679105484)        | [43679105493](https://github.com/commercekit-tools/ccv2-deploy/actions/runs/43679105493)        | `2169885904`               | 3, resolved by test-only PR #11 |
+Final main evidence was independently checked for all six repositories. Every
+processed analysis listed below has zero results, no processing errors/warnings
+and zero open main alerts. Build's two and Deploy's three initial findings are
+fixed; a green CodeQL job alone is not used as proof of zero findings.
 
-Setup's six native-runner jobs plus quality passed. Cleanup's main protection
-still requires `validate` (app 15368) and `CodeQL` (app 57789), with administrator
-enforcement enabled and force-push/deletion disabled. Main analysis evidence for
-the four zero-finding repositories reported no processing errors or warnings.
+| Repository | Main validation                                                                                 | CodeQL job                                                                                      | Processed main analysis | Open main alerts |
+| ---------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------- | ---------------- |
+| action-kit | [43677942127](https://github.com/commercekit-tools/action-kit/actions/runs/43677942127)         | [43677942074](https://github.com/commercekit-tools/action-kit/actions/runs/43677942074)         | `2169851728`            | 0                |
+| Notify     | [43679092935](https://github.com/commercekit-tools/notify/actions/runs/43679092935)             | [43679092926](https://github.com/commercekit-tools/notify/actions/runs/43679092926)             | `2169885501`            | 0                |
+| Setup      | [43679114996](https://github.com/commercekit-tools/setup-commercekit/actions/runs/43679114996)  | [43679114994](https://github.com/commercekit-tools/setup-commercekit/actions/runs/43679114994)  | `2169886190`            | 0                |
+| Cleanup    | [43679344145](https://github.com/commercekit-tools/ccv2-build-cleanup/actions/runs/43679344145) | [43679344327](https://github.com/commercekit-tools/ccv2-build-cleanup/actions/runs/43679344327) | `2169892997`            | 0                |
+| Build      | [43680545359](https://github.com/commercekit-tools/ccv2-build/actions/runs/43680545359)         | [43680545418](https://github.com/commercekit-tools/ccv2-build/actions/runs/43680545418)         | `2169929303`            | 0                |
+| Deploy     | [43680764774](https://github.com/commercekit-tools/ccv2-deploy/actions/runs/43680764774)        | [43680764683](https://github.com/commercekit-tools/ccv2-deploy/actions/runs/43680764683)        | `2169935725`            | 0                |
 
-The ordinary local validation rerun passed format/lint, 76 tests, workflow policy
-and public scan. Its first audit attempt could not resolve the public advisory
-endpoint in the restricted network; the authorized network retry passed with no
-known vulnerabilities. The final full quality command is recorded after the
-security-follow-up pins are adopted. A narrow independent source review found
-no generated-code, privacy or network-guard defect in this harness; it did not
-execute CodeQL or replace the recorded analysis evidence.
+Setup's six native-runner jobs plus quality passed. Its existing Main ruleset
+`25021617` required one review and explicitly allowed OrganizationAdmin always
+bypass. After verifying `anilkreddy` held that role and every check was green,
+the authorized merge used that existing administrator exception. No approval
+was fabricated and no ruleset was changed. Other implementation merges used
+normal exact-head guards. Cleanup's strict main protection still requires
+`validate` (app 15368) and `CodeQL` (app 57789), with administrator enforcement
+enabled and force-push/deletion disabled.
 
-Final Build main `fc65ee281f39b98d2cecad36ff93d40cf055fbc2` passed
-[CI 43680545359](https://github.com/commercekit-tools/ccv2-build/actions/runs/43680545359)
-and [CodeQL 43680545418](https://github.com/commercekit-tools/ccv2-build/actions/runs/43680545418).
-Processed exact-main analysis `2169929303` reported zero results, no processing
-errors/warnings, and zero open main alerts; both initial findings are fixed.
+## Final executed commands and limits
 
-Deploy test-only PR #11 merged as final main
-`1af852b9a00e981da4ea13565bb18c7ce7fda27f` after latest
-[CI 43680659831](https://github.com/commercekit-tools/ccv2-deploy/actions/runs/43680659831)
-and [CodeQL 43680659853](https://github.com/commercekit-tools/ccv2-deploy/actions/runs/43680659853)
-passed; processed PR analysis `2169932326` contained zero results and no errors
-or warnings. Post-merge main analysis is recorded after it completes.
+| Command/check                                                                               | Outcome                                                          |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm install --frozen-lockfile` in this harness and five exact-main read-only checkouts    | PASS, real registry 0.0.6; no local overrides                    |
+| `pnpm quality` after final five pins                                                        | PASS, 76 tests, zero skips, format/lint/policy/public scan/audit |
+| `actionlint .github/workflows/*.yml`                                                        | PASS                                                             |
+| Exact public `action.yml` input-name comparison for all five adopted refs                   | PASS                                                             |
+| `REPORTING_MANIFEST=... REPORTING_LOCAL_ORIGIN=https://localhost:18987 pnpm test:reporting` | PASS, 24 records in 55,745 ms                                    |
+| Source/runner/input metadata hash and lifecycle assertions against final safe evidence      | PASS                                                             |
+
+An earlier restricted-network quality rerun could not resolve npm's advisory
+endpoint. Its authorized network retry passed, and the complete final quality
+command passed afterward; the failed attempt is not reported as a pass. A narrow
+independent source review found no generated-code, privacy or network-guard
+defect in this harness; it did not execute CodeQL or replace processed analysis
+evidence.
+
+The final replay used the normal published dependency without candidate flags,
+file links or rewritten package metadata. The five Action bundles ran as
+standalone processes. Source and consumer paths matched the normal exact-main
+checkouts; public package byte/SRI/schema/export proof ran before any target
+operation. The clean executed harness commit and runtime/source hashes remain
+in the evidence even though this later report-only commit adds the result file.
+
+No new hosted Sandbox workflow was dispatched. All provider delivery was
+mocked; no real SAP, production cleanup, deployment, Action release or Git tag
+was performed. Package 0.0.6 publication was separately authorized and completed
+as recorded above. Remaining gates are production SAP eligibility evidence,
+operational/non-production owner approval and any future Action release
+approval. Sandbox passes do not prove SAP deletion guarantees or authorize
+real deletion.
