@@ -1,0 +1,36 @@
+name: Run and validate cleanup dry-run
+description: Exercise the pinned Cleanup Action with zero target mutations and validate its published event.
+inputs:
+  attempt:
+    description: first or repeat; records must match across both invocations
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Execute cleanup dry-run
+      id: action
+      continue-on-error: true
+      uses: commercekit-tools/ccv2-build-cleanup@4ab51d33ded51a360e8223e686bb46918cf7863f
+      with:
+        token-endpoint: ${{ env.CCV2_TOKEN_ENDPOINT }}
+        client-id: ${{ env.CCV2_CLIENT_ID }}
+        client-secret: ${{ env.CCV2_CLIENT_SECRET }}
+        resource: ${{ env.CCV2_RESOURCE }}
+        subscription-code: '131762872233634f29fdeb7d50983aa4'
+        application-code: commerce
+        api-base-url: https://ccv2.sandbox.commercekit.tools
+        retention-days: '30'
+        keep-latest: '10'
+        max-deletions: '20'
+        exclude-build-codes: cleanup-006
+        dry-run: 'true'
+        timeout-minutes: '2'
+        continue-on-delete-error: 'false'
+    - name: Validate cleanup outputs, event and observed mutation count
+      if: ${{ always() }}
+      shell: bash
+      run: node scripts/runner.mjs record-cleanup
+      env:
+        CLEANUP_ATTEMPT: ${{ inputs.attempt }}
+        OUTPUTS_JSON: ${{ toJSON(steps.action.outputs) }}
+        ACTION_OUTCOME: ${{ steps.action.outcome }}

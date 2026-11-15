@@ -3,7 +3,21 @@ import { chmod, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { TechnicalUserTokenManager, createCcv2Client } from '@commercekit-tools/ccv2-client';
 import { parseNotificationEventJson } from '@commercekit-tools/notification-contract';
-import { getScenario, phases, providers } from './scenarios.mjs';
+import {
+  approvedFixtureBuildCode,
+  createApprovedBuildFixture,
+  validateApprovedBuildCode,
+} from './approval.mjs';
+import {
+  cleanupBuildCode,
+  cleanupPolicy,
+  cleanupScenarioId,
+  getCleanupExpectations,
+  getCleanupFixture,
+  getScenario,
+  phases,
+  providers,
+} from './scenarios.mjs';
 
 export const origin = 'https://ccv2.sandbox.commercekit.tools';
 export const subscription = '131762872233634f29fdeb7d50983aa4';
@@ -27,7 +41,7 @@ export function assertLiveAuthorization(env) {
       typeof env.NOTIFICATION_WEBHOOK === 'string' && env.NOTIFICATION_WEBHOOK.length > 0,
     );
   }
-  getScenario(env.SCENARIO);
+  if (getScenario(env.SCENARIO).cleanup) requireValue(env.PROVIDER === 'none');
 }
 
 export async function controlRequest(
@@ -36,7 +50,7 @@ export async function controlRequest(
 ) {
   requireValue(
     path === '/sandbox/v1/runs' ||
-      /^\/sandbox\/v1\/runs\/run_[a-f0-9]{32}(?:\/(?:scenario|state))?$/.test(path),
+      /^\/sandbox\/v1\/runs\/run_[a-f0-9]{32}(?:\/(?:scenario|state|cleanup-fixture))?$/.test(path),
   );
   const response = await fetcher(`${origin}${path}`, {
     method,
@@ -143,6 +157,22 @@ async function managementRead(client, path) {
   });
   requireValue(response.status === 200 && response.body.kind === 'json');
   return response.body.value;
+}
+
+function observedOperationCalls(state, operation) {
+  requireValue(
+    state.faultCounters &&
+      typeof state.faultCounters === 'object' &&
+      !Array.isArray(state.faultCounters),
+  );
+  let total = 0;
+  for (const [key, count] of Object.entries(state.faultCounters)) {
+    if (!key.startsWith(`${operation}:`)) continue;
+    requireValue(Number.isSafeInteger(count) && count >= 0);
+    total += count;
+    requireValue(Number.isSafeInteger(total));
+  }
+  return total;
 }
 
 function phaseFrom(env) {
@@ -289,13 +319,126 @@ export function nextDeployInputs(scenarioId, phase, records) {
   };
 }
 
+/** Validate the actual bundled cleanup producer and observed target API calls. */
+export function assertCleanupRecord({ outputs, outcome, run, state }) {
+  requireValue(outputs && typeof outputs['result-json'] === 'string');
+  requireValue(typeof outputs['notification-event'] === 'string');
+  for (const name of ['result-json', 'notification-event']) {
+    requireValue(Buffer.byteLength(outputs[name]) <= 65536);
+    for (const secret of secrets(run)) requireValue(!outputs[name].includes(secret));
+  }
+  const result = JSON.parse(outputs['result-json']);
+  const event = parseNotificationEventJson(outputs['notification-event'], { maxBytes: 65536 });
+  assert.equal(outcome, 'success');
+  assert.equal(result.schemaVersion, 1);
+  assert.equal(result.status, 'blocked');
+  assert.equal(result.dryRun, true);
+  assert.equal(result.error, undefined);
+  assert.deepEqual(result.scope, { subscriptionCode: subscription, applicationCode: 'commerce' });
+  assert.deepEqual(result.policy, cleanupPolicy);
+  assert.deepEqual(result.completeness, { inventory: true, protection: false, eligibility: false });
+  assert.deepEqual(result.truncation, { omittedDecisions: 0 });
+  requireValue(Number.isSafeInteger(result.durationMs) && result.durationMs >= 0);
+  requireValue(
+    typeof result.runStartedAt === 'string' && Number.isFinite(Date.parse(result.runStartedAt)),
+  );
+  const expected = getCleanupExpectations();
+  assert.deepEqual(result.counts, expected.counts);
+  assert.equal(outputs['cleanup-status'], result.status);
+  assert.equal(outputs['dry-run'], 'true');
+  assert.equal(outputs['duration-ms'], String(result.durationMs));
+  for (const [output, count] of Object.entries({
+    'scanned-count': 'scanned',
+    'eligible-count': 'eligible',
+    'planned-count': 'planned',
+    'deletion-requested-count': 'deletionRequested',
+    'skipped-count': 'skipped',
+    'failed-count': 'failed',
+    'unknown-count': 'unknown',
+  }))
+    assert.equal(outputs[output], String(result.counts[count]));
+  const codes = Array.from({ length: 105 }, (_, index) => cleanupBuildCode(index));
+  assert.deepEqual(
+    result.decisions.map((decision) => decision.code),
+    codes,
+  );
+  for (const decision of result.decisions) {
+    assert.equal(decision.applicationCode, 'commerce');
+    assert.equal(
+      decision.disposition,
+      expected.protectedCodes.includes(decision.code) ? 'protected' : 'blocked',
+    );
+    const reasons = ['eligibility-unverified'];
+    for (const [reason, indexes] of Object.entries(expected.reasons))
+      if (indexes.some((index) => cleanupBuildCode(index) === decision.code)) reasons.push(reason);
+    assert.deepEqual(decision.reasons.toSorted(), reasons.toSorted());
+  }
+  for (const [reason, indexes] of Object.entries(expected.reasons))
+    assert.deepEqual(
+      result.decisions
+        .filter((decision) => decision.reasons.includes(reason))
+        .map((decision) => decision.code),
+      indexes.map(cleanupBuildCode),
+    );
+  assert.equal(event.eventType, 'ccv2.build-cleanup.completed');
+  assert.equal(event.status, 'failure');
+  assert.equal(event.source.component, 'ccv2-build-cleanup');
+  assert.equal(event.occurredAt, result.runStartedAt);
+  assert.equal(event.data.mode, 'dry-run');
+  assert.equal(event.data.cleanupStatus, result.status);
+  assert.equal(event.data.subscriptionCode, subscription);
+  assert.equal(event.data.applicationCode, 'commerce');
+  assert.equal(event.data.retentionDays, cleanupPolicy.retentionDays);
+  assert.equal(event.data.keepLatest, cleanupPolicy.keepLatest);
+  assert.equal(event.data.durationMs, result.durationMs);
+  assert.equal(event.data.error, undefined);
+  for (const [eventCount, resultCount] of Object.entries({
+    scannedCount: 'scanned',
+    eligibleCount: 'eligible',
+    plannedCount: 'planned',
+    deletionRequestedCount: 'deletionRequested',
+    skippedCount: 'skipped',
+    failedCount: 'failed',
+    unknownCount: 'unknown',
+    deferredCount: 'deferred',
+  }))
+    assert.equal(event.data[eventCount], result.counts[resultCount]);
+  assert.equal(event.context?.repository, 'commercekit-tools/action-integration-tests');
+  assert.equal(event.context?.ref, 'refs/heads/main');
+  assert.equal(state.counts.builds, 105);
+  assert.equal(state.counts.deployments, 3);
+  const readOperations = new Set([
+    'issueToken',
+    'getBuilds',
+    'getBuild',
+    'getDeployments',
+    'getEnvironments',
+    'getDatabackups',
+  ]);
+  requireValue(state.faultCounters && typeof state.faultCounters === 'object');
+  for (const [key, count] of Object.entries(state.faultCounters)) {
+    requireValue(Number.isSafeInteger(count) && count >= 0);
+    // Target mutations are distinct from control-plane fixture/run operations.
+    requireValue(readOperations.has(key.split(':')[0]) || count === 0);
+  }
+  requireValue(state.faultCounters['getBuilds:'] >= 4);
+  return { result, event, outputs, outcome, targetApiMutationCount: 0 };
+}
+
 export async function runCommand(command, env, core, dependencies = {}) {
   const directory = privateDirectory(env);
   const fetcher = dependencies.fetcher ?? fetch;
   const request = (path, options) => controlRequest(path, { ...options, fetcher });
   const scenario = getScenario(env.SCENARIO);
-  if (command === 'prepare') {
+  if (command === 'prepare' || command === 'prepare-approved-deploy') {
     assertLiveAuthorization(env);
+    const approved = command === 'prepare-approved-deploy';
+    let sourceBuildCode;
+    if (approved) {
+      requireValue(env.SCENARIO === 'rolling-success' && env.PROVIDER === 'none');
+      // Validate before creating any run; this is the only cross-job handoff value.
+      sourceBuildCode = validateApprovedBuildCode(env.BUILT_BUILD_CODE);
+    }
     await mkdir(directory, { mode: 0o700 });
     await chmod(directory, 0o700);
     const run = validateControlRun(
@@ -312,6 +455,27 @@ export async function runCommand(command, env, core, dependencies = {}) {
       token: run.controlToken,
       body: scenario.configuration,
     });
+    if (scenario.cleanup) {
+      const fixture = getCleanupFixture(dependencies.now?.() ?? Date.now());
+      await request(`/sandbox/v1/runs/${run.runId}/cleanup-fixture`, {
+        method: 'PUT',
+        token: run.controlToken,
+        body: fixture,
+      });
+    }
+    if (approved) {
+      await request(`/sandbox/v1/runs/${run.runId}/cleanup-fixture`, {
+        method: 'PUT',
+        token: run.controlToken,
+        body: createApprovedBuildFixture(sourceBuildCode, dependencies.now?.() ?? Date.now()),
+      });
+      // This is provenance for a recreated fixture, never a fabricated producer record.
+      await writePrivate(directory, 'approved-build.json', {
+        sourceBuildCode,
+        buildCode: approvedFixtureBuildCode(sourceBuildCode),
+      });
+      core.info('Approved build recreated as a new synthetic Sandbox fixture.');
+    }
     for (const [name, value] of Object.entries({
       CCV2_TOKEN_ENDPOINT: run.credentials.tokenUrl,
       CCV2_CLIENT_ID: run.credentials.clientId,
@@ -348,17 +512,93 @@ export async function runCommand(command, env, core, dependencies = {}) {
   }
   validateRun(run);
   for (const secret of secrets(run)) core.setSecret(secret);
+  if (command === 'record-cleanup') {
+    requireValue(env.SCENARIO === cleanupScenarioId && env.PROVIDER === 'none');
+    requireValue(['first', 'repeat'].includes(env.CLEANUP_ATTEMPT));
+    const state = await request(`/sandbox/v1/runs/${run.runId}/state`, { token: run.controlToken });
+    const record = assertCleanupRecord({
+      outputs: JSON.parse(env.OUTPUTS_JSON ?? ''),
+      outcome: env.ACTION_OUTCOME,
+      run,
+      state,
+    });
+    if (env.CLEANUP_ATTEMPT === 'repeat') {
+      const first = await readPrivate(directory, 'first-cleanup.json');
+      assert.deepEqual(record.result.decisions, first.result.decisions);
+      assert.deepEqual(record.result.counts, first.result.counts);
+    }
+    await writePrivate(directory, `${env.CLEANUP_ATTEMPT}-cleanup.json`, record);
+    core.info(
+      `Expected ${env.CLEANUP_ATTEMPT} cleanup result/event verified; zero target API mutations.`,
+    );
+    return;
+  }
+  if (command === 'assert-cleanup') {
+    requireValue(env.SCENARIO === cleanupScenarioId && env.PROVIDER === 'none');
+    const state = await request(`/sandbox/v1/runs/${run.runId}/state`, { token: run.controlToken });
+    for (const attempt of ['first', 'repeat']) {
+      const record = await readPrivate(directory, `${attempt}-cleanup.json`);
+      assertCleanupRecord({ ...record, run, state });
+    }
+    requireValue(state.faultCounters['getBuilds:'] >= 8);
+    await core.summary
+      ?.addRaw(
+        '### Sandbox cleanup dry-run\n\n105 builds; two inventory pages per pass; repeated run verified. Zero target API mutations. Cleanup remains blocked by unverified production eligibility; no deletion was requested.\n',
+      )
+      .write();
+    core.info('Cleanup dry-run and repeat-run assertions passed; zero target API mutations.');
+    return;
+  }
   const records = {};
   for (const phase of phases)
     if (await exists(directory, `${phase}.json`))
       records[phase] = await readPrivate(directory, `${phase}.json`);
+  let approved;
+  if (await exists(directory, 'approved-build.json')) {
+    requireValue(env.SCENARIO === 'rolling-success' && env.PROVIDER === 'none');
+    requireValue(!records.build && !records.followup && !records.final);
+    approved = await readPrivate(directory, 'approved-build.json');
+    validateApprovedBuildCode(approved.sourceBuildCode);
+    assert.equal(approved.buildCode, approvedFixtureBuildCode(approved.sourceBuildCode));
+  }
+  if (command === 'handoff-build') {
+    requireValue(env.SCENARIO === 'rolling-success' && env.PROVIDER === 'none' && !approved);
+    requireValue(records.build && Object.keys(records).length === 1);
+    const record = assertActionRecord({
+      scenarioId: env.SCENARIO,
+      phase: 'build',
+      outputs: records.build.outputs,
+      outcome: records.build.outcome,
+      run,
+    });
+    const code = validateApprovedBuildCode(record.result.buildCode);
+    const state = await request(`/sandbox/v1/runs/${run.runId}/state`, { token: run.controlToken });
+    assert.equal(state.counts.builds, 1);
+    assert.equal(state.counts.deployments, 0);
+    assert.equal(observedOperationCalls(state, 'createBuild'), 1);
+    assert.equal(observedOperationCalls(state, 'createDeployment'), 0);
+    core.setOutput('build-code', code);
+    await core.summary
+      ?.addRaw(
+        `### Sandbox build ready for approval\n\nValidated build: \`${code}\`. The source run is removed before approval. After approval, a fresh run will deploy recreated fixture \`${approvedFixtureBuildCode(code)}\`; no credentials cross jobs.\n`,
+      )
+      .write();
+    return;
+  }
   if (command === 'deploy-inputs') {
-    const values = nextDeployInputs(env.SCENARIO, phaseFrom(env), records);
+    const phase = phaseFrom(env);
+    if (approved) requireValue(phase === 'initial');
+    // nextDeployInputs needs only a validated build projection, not a producer event.
+    const inputRecords = approved
+      ? { build: { result: { outcome: 'success', buildCode: approved.buildCode } } }
+      : records;
+    const values = nextDeployInputs(env.SCENARIO, phase, inputRecords);
     for (const [name, value] of Object.entries(values)) core.setOutput(name, value);
     return;
   }
   if (command === 'record') {
     const phase = phaseFrom(env);
+    if (approved) requireValue(phase === 'initial');
     const record = assertActionRecord({
       scenarioId: env.SCENARIO,
       phase,
@@ -367,7 +607,9 @@ export async function runCommand(command, env, core, dependencies = {}) {
       run,
     });
     if (phase !== 'build') {
-      requireValue(record.result.buildCode === records.build?.result.buildCode);
+      requireValue(
+        record.result.buildCode === (approved?.buildCode ?? records.build?.result.buildCode),
+      );
       if (phase !== 'initial')
         requireValue(
           record.result.originalDeploymentCode ===
@@ -405,6 +647,35 @@ export async function runCommand(command, env, core, dependencies = {}) {
     core.info(`Expected ${phase} provider delivery verified.`);
     return;
   }
+  if (command === 'assert-approved-deployment') {
+    requireValue(approved && Object.keys(records).length === 1 && records.initial);
+    const record = assertActionRecord({
+      scenarioId: env.SCENARIO,
+      phase: 'initial',
+      outputs: records.initial.outputs,
+      outcome: records.initial.outcome,
+      run,
+    });
+    assert.equal(record.result.buildCode, approved.buildCode);
+    const state = await request(`/sandbox/v1/runs/${run.runId}/state`, { token: run.controlToken });
+    assert.equal(state.counts.builds, 1);
+    assert.equal(state.counts.deployments, 1);
+    assert.equal(observedOperationCalls(state, 'createBuild'), 0);
+    assert.equal(state.faultCounters['createDeployment:d1'], 1);
+    assert.equal(observedOperationCalls(state, 'createDeployment'), 1);
+    const client =
+      dependencies.client ?? managementClient(run, { fetcher, maskSecret: core.setSecret });
+    const detail = await managementRead(client, `/deployments/${record.result.deploymentCode}`);
+    assert.equal(detail.buildCode, approved.buildCode);
+    assert.equal(detail.status, 'DEPLOYED');
+    await core.summary
+      ?.addRaw(
+        `### Approved synthetic Sandbox deployment\n\nSource build: \`${approved.sourceBuildCode}\`. Recreated fixture: \`${approved.buildCode}\`. Deployment: \`${record.result.deploymentCode}\`. The actual Deploy Action result and notification were validated; no Build Action event was fabricated for this fixture.\n`,
+      )
+      .write();
+    core.info('Approved recreated fixture deployment result and event verified.');
+    return;
+  }
   if (command === 'assert') {
     const required = [
       'build',
@@ -435,7 +706,7 @@ export async function runCommand(command, env, core, dependencies = {}) {
     );
     if (env.SCENARIO === 'build-create-error') assert.equal(state.faultCounters['createBuild:'], 1);
     if (env.SCENARIO === 'deploy-create-error')
-      assert.equal(state.faultCounters['createDeployment:'], 1);
+      assert.equal(state.faultCounters['createDeployment:d1'], 1);
     if (scenario.deploy && env.SCENARIO !== 'deploy-create-error') {
       const finalPhase = required.at(-1);
       const client =

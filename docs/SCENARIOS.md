@@ -93,3 +93,25 @@ The provider suite additionally verifies webhook acceptance of actual producer
 events. Representative Slack/Teams visual inspection and a separate owner
 decision are still required before releasing the Actions. Initial repository
 creation alone is not evidence that any live suite ran.
+
+## Standalone cleanup fixture
+
+The separate manual `cleanup.yml` workflow uses `cleanup-dry-run`; it does not
+extend the existing 16-entry full suite or send provider messages. Its shared
+catalog seeds 105 builds (two listing pages) and three current/active deployment
+references. It includes old/recent completions, latest-count protection, a
+start-time tie, deployed/snapshot/excluded/active/unknown/deletion-marked builds,
+a missing timestamp and an old completion with recent internal modification.
+
+The current production-shaped cleanup adapter cannot verify SAP four-hour
+eligibility. Expected result: `blocked`, `dryRun=true`, 105 scanned/skipped,
+13 protected dispositions, zero eligible/planned/requested/failed/unknown/deferred.
+Every exact per-build reason set and the shared cleanup notification are checked;
+reason categories overlap. `blocked` in dry-run is a handled successful Action
+execution with a shared failure-status notification, not a deletion.
+
+A second invocation must preserve counts/decisions. Observed target API counters
+must contain only supported reads/authentication, and listing counters must prove
+both pages across both discovery passes for each invocation. Fixture creation and
+run removal are control-plane operations, counted separately from target API
+mutations. The final always-run step removes the disposable run and verifies404.

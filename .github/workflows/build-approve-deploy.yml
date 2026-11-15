@@ -1,0 +1,140 @@
+name: Build, check and approve Sandbox deploy
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type RUN-COMMERCEKIT-SANDBOX-TESTS to create disposable Sandbox runs
+        type: string
+        required: true
+permissions:
+  contents: read
+  packages: read
+concurrency:
+  group: commercekit-action-integration
+  cancel-in-progress: false
+jobs:
+  repository-build:
+    if: >-
+      github.repository == 'commercekit-tools/action-integration-tests' &&
+      github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' &&
+      inputs.confirmation == 'RUN-COMMERCEKIT-SANDBOX-TESTS'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+          registry-url: https://npm.pkg.github.com
+          scope: '@commercekit-tools'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and validate the integration repository
+        run: pnpm quality
+      - name: Verify deployment approval is configured before any Sandbox run
+        run: node scripts/approval.mjs verify-environment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  commerce-check:
+    needs: repository-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install verified CommerceKit CLI
+        uses: commercekit-tools/setup-commercekit@7f650f3162ab027bfd784cf879832f44d3248584
+        with:
+          version: '0.1.0-preview.2'
+      - name: Check the supported synthetic Commerce files
+        run: commercekit check fixtures/commerce --format github
+  cloud-build:
+    needs: commerce-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      build-code: ${{ steps.handoff.outputs.build-code }}
+    env:
+      SCENARIO: rolling-success
+      PROVIDER: none
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set private state directory for this job
+        run: printf 'STATE_DIRECTORY=%s/commercekit-integration\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+          registry-url: https://npm.pkg.github.com
+          scope: '@commercekit-tools'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create disposable Sandbox build run
+        id: prepare
+        run: node scripts/runner.mjs prepare
+      - name: Execute and validate CCv2 Build Action
+        if: steps.prepare.outcome == 'success'
+        uses: ./.github/actions/build
+      - name: Export only the validated build identifier
+        id: handoff
+        run: node scripts/runner.mjs handoff-build
+      - name: Delete the completed build run and verify cleanup
+        if: ${{ always() }}
+        run: node scripts/runner.mjs cleanup
+        env:
+          STATE_DIRECTORY: ${{ runner.temp }}/commercekit-integration
+  deploy:
+    needs: cloud-build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: sandbox-deploy-approval
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    env:
+      SCENARIO: rolling-success
+      PROVIDER: none
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set private state directory for this approved job
+        run: printf 'STATE_DIRECTORY=%s/commercekit-integration\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .node-version
+          registry-url: https://npm.pkg.github.com
+          scope: '@commercekit-tools'
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Recheck approval protection before creating the deployment run
+        run: node scripts/approval.mjs verify-environment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Recreate the approved synthetic build in a fresh isolated run
+        id: prepare
+        run: node scripts/runner.mjs prepare-approved-deploy
+        env:
+          BUILT_BUILD_CODE: ${{ needs.cloud-build.outputs.build-code }}
+      - name: Deploy the approved synthetic build
+        if: steps.prepare.outcome == 'success'
+        uses: ./.github/actions/deploy
+        with:
+          phase: initial
+      - name: Assert approved deployment, its real result and event
+        if: ${{ always() && steps.prepare.outcome == 'success' }}
+        run: node scripts/runner.mjs assert-approved-deployment
+      - name: Delete the approved deployment run and verify cleanup
+        if: ${{ always() }}
+        run: node scripts/runner.mjs cleanup
+        env:
+          STATE_DIRECTORY: ${{ runner.temp }}/commercekit-integration

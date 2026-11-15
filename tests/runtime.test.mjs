@@ -165,7 +165,7 @@ function fakeControl(id, calls, extra = {}) {
           builds: id === 'build-create-error' ? 0 : 1,
           deployments: scenario.deploy && id !== 'deploy-create-error' ? 1 : 0,
         },
-        faultCounters: { 'createBuild:': 1, 'createDeployment:': 1 },
+        faultCounters: { 'createBuild:': 1, 'createDeployment:d1': 1 },
       });
     return Response.json({ error: 'deleted' }, { status: 404 });
   };
