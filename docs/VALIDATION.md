@@ -1,5 +1,43 @@
 # Workflow validation — updated 2026-11-15 (UTC)
 
+## Published 0.0.6 registry transition
+
+The authorized package-only [run 43678067818](https://github.com/commercekit-tools/action-kit/actions/runs/43678067818)
+published notification-contract 0.0.6 from main
+`3fecce40414d709884fa48e48eca278f470b20b0`. This harness now installs exact
+registry 0.0.6 with client 0.0.3 unchanged. Frozen installation, independent
+registry tarball SHA256/SRI/byte proof and the complete ordinary `pnpm quality`
+passed: **76 offline tests, zero skips**, format/lint, unchanged workflow policy,
+public scan and audit with no known vulnerabilities.
+
+The local reporting command now requires normal registry manifests/locks and
+installed public package bytes; candidate-only overrides were retired. An early combined five normal registry bundle replay passed all 24 records on
+clean reviewed branch heads. The first attempt exposed pnpm 12 multi-document
+lock parsing before any target call; strict graph selection and a dedicated
+regression test resolved it. Final reviewed merged Action pins passed a new
+24-record replay in **55,745 ms** from clean committed harness
+`a4224df787c277b88deb1458eaa9162e6838967c`; every source was clean and matched
+the adopted immutable ref. Four disposable runs were removed with absence
+verified, both Cleanup passes made zero target mutations, Setup invalid input
+made zero network calls, and all 16 provider requests were mocked. See
+[final safe evidence](reporting-registry-main-evidence.json) and
+[current reporting evidence](REPORTING.md); prior
+source-candidate evidence remains [historical](REPORTING-CANDIDATES.md). New
+hosted dispatches and live provider/SAP validation have not run.
+
+The final Build/Deploy pins include narrow test-only CodeQL corrections. Their
+initial green jobs had two/three processed findings; final exact-main analyses
+now contain zero results and zero open alerts. All six repositories have green
+main validation/CodeQL and clear processed analyses. The combined report also
+records Setup's existing OrganizationAdmin merge exception, without suggesting
+that review was fabricated or protection changed.
+
+## Historical 0.0.4 baseline and hosted workflow evidence
+
+The remaining sections record earlier published 0.0.4 Action pins and their
+executed workflows. Their legacy failure-status cleanup event assertions do
+not describe the new 0.0.6 warning vocabulary or establish a new hosted run.
+
 This record distinguishes offline/local validation from owner-authorized hosted
 Sandbox execution. Both new manual workflows completed successfully after PR #1
 merged. No provider send, real SAP operation, release, tag, package publication or

@@ -49,6 +49,17 @@ See [workflow setup, dispatch and limits](docs/WORKFLOWS.md). In particular,
 merged Sandbox source does not prove that the hosted `/cleanup-fixture` endpoint
 is deployed. Live workflow results are recorded separately from offline tests.
 
+## Consistent reporting validation
+
+The [local reporting harness](docs/REPORTING.md) validates all five actual bundled
+Actions against exact published notification-contract 0.0.6. It verifies normal
+registry manifests/locks, installed public package bytes, reviewed sources and
+bundle hashes before using the local Sandbox and mocked provider fetches. Input
+coverage, secret masking, status icons/tables and notification/summary parity are
+checked without hosted dispatches, live provider sends or real SAP calls.
+[Historical source-candidate evidence](docs/REPORTING-CANDIDATES.md) is archived
+separately and does not substitute for registry-backed validation.
+
 ## Development
 
 Use Node 24 and pnpm 12.6.0, then configure local GitHub Packages read access as
@@ -62,7 +73,7 @@ pnpm quality
 
 Shared schema validation and CCv2 HTTP/authentication come from the existing
 `@commercekit-tools/notification-contract` and `@commercekit-tools/ccv2-client`
-packages, pinned to `0.0.4` and `0.0.3` respectively. These package versions are separate from Action
+packages, pinned to `0.0.6` and `0.0.3` respectively. These package versions are separate from Action
 versions. Action revisions are catalogued in `action-refs.json`. Producer pins live in
 the composite wrappers under `.github/actions/`; CLI setup is pinned in the
 build/approval workflow.

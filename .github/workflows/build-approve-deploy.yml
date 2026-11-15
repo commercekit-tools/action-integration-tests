@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Install verified CommerceKit CLI
-        uses: commercekit-tools/setup-commercekit@7f650f3162ab027bfd784cf879832f44d3248584
+        uses: commercekit-tools/setup-commercekit@52a5a098d89f9ef2c42a234b4c3baa5d60a7a896
         with:
           version: '0.1.0-preview.2'
       - name: Check the supported synthetic Commerce files

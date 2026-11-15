@@ -156,3 +156,26 @@ test('approved deploy requires ordered checks, a protected environment and publi
       validatePolicy(mutation('.github/workflows/build-approve-deploy.yml', change)),
     );
 });
+
+test('public input-name metadata is bound to adopted immutable Action refs', () => {
+  for (const mutate of [
+    (value) => {
+      value['commercekit-tools/ccv2-build'].ref = 'a'.repeat(40);
+    },
+    (value) => {
+      value['commercekit-tools/ccv2-build'].inputs.push('client-secret');
+    },
+    (value) => {
+      value['commercekit-tools/ccv2-build'].inputs.push('invalid input');
+    },
+    (value) => {
+      delete value['commercekit-tools/ccv2-build'];
+    },
+  ]) {
+    const files = readPolicyFiles();
+    const metadata = JSON.parse(files['action-inputs.json']);
+    mutate(metadata);
+    files['action-inputs.json'] = JSON.stringify(metadata);
+    assert.throws(() => validatePolicy(files));
+  }
+});

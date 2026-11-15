@@ -8,6 +8,7 @@ import {
   createDeploymentEvent,
   parseNotificationEventJson,
 } from '@commercekit-tools/notification-contract';
+import { fixtureInputs } from './reporting-fixtures.mjs';
 import { origin, runCommand, subscription } from '../scripts/runtime.mjs';
 
 const sourceBuildCode = '20261114.7';
@@ -75,6 +76,7 @@ function buildOutputs(code = sourceBuildCode) {
     pollCount: 1,
     buildCode: code,
     buildStatus: 'SUCCESS',
+    ...fixtureInputs('ccv2-build', syntheticRun('f')),
   };
   return {
     'result-json': JSON.stringify(result),
@@ -99,6 +101,7 @@ function deployOutputs(code = fixtureBuildCode) {
     originalDeploymentCode: '700007',
     deploymentStatus: 'DEPLOYED',
     actionRequired: false,
+    ...fixtureInputs('ccv2-deploy', syntheticRun('f')),
   };
   return {
     'result-json': JSON.stringify(result),

@@ -14,7 +14,7 @@ commits. This setup does not deploy the Sandbox or release any Action.
    workflows need no contents-write, release, or package-publish permission.
 4. In each shared package's **Manage Actions access**, grant this repository
    **Read** access to `notification-contract` and `ccv2-client`. The contract is pinned
-   exactly to `0.0.4` and the client to `0.0.3`. A successful install with an owner's local credential does
+   exactly to `0.0.6` and the client to `0.0.3`. A successful install with an owner's local credential does
    not prove the repository's workflow token has package access.
 5. Create/configure the environments below before the first live dispatch.
 

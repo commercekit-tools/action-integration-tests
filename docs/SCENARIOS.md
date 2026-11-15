@@ -108,7 +108,8 @@ eligibility. Expected result: `blocked`, `dryRun=true`, 105 scanned/skipped,
 13 protected dispositions, zero eligible/planned/requested/failed/unknown/deferred.
 Every exact per-build reason set and the shared cleanup notification are checked;
 reason categories overlap. `blocked` in dry-run is a handled successful Action
-execution with a shared failure-status notification, not a deletion.
+execution with a shared warning-status notification and explicit safety issues,
+not a deletion.
 
 A second invocation must preserve counts/decisions. Observed target API counters
 must contain only supported reads/authentication, and listing counters must prove

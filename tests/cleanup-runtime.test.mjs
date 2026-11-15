@@ -8,6 +8,7 @@ import {
   createBuildCleanupEvent,
   parseNotificationEventJson,
 } from '@commercekit-tools/notification-contract';
+import { fixtureInputs } from './reporting-fixtures.mjs';
 import {
   cleanupScenarioId,
   getCleanupExpectations,
@@ -137,15 +138,23 @@ function producerRecord() {
       disposition: protectedIndexes.has(index) ? 'protected' : 'blocked',
     })),
     truncation: { omittedDecisions: 0 },
+    ...fixtureInputs('ccv2-build-cleanup', run),
   };
   const event = createBuildCleanupEvent({
-    status: 'failure',
+    status: 'warning',
     occurredAt: result.runStartedAt,
     env: {
       GITHUB_REPOSITORY: 'commercekit-tools/action-integration-tests',
       GITHUB_REF: 'refs/heads/main',
     },
     data: {
+      ...fixtureInputs('ccv2-build-cleanup', run),
+      protectedCount: 13,
+      blockedCount: 92,
+      issues: [
+        { code: 'eligibility-unverified', message: 'Eligibility evidence is unavailable.' },
+        { code: 'protection-unverified', message: 'Protection evidence is incomplete.' },
+      ],
       mode: 'dry-run',
       subscriptionCode: subscription,
       applicationCode: 'commerce',
@@ -232,14 +241,14 @@ test('cleanup catalog is isolated, multipage, mixed and leaves existing suites u
 });
 
 test('cleanup producer uses actual published shared factory/parser with accurate blocked dry-run counts', () => {
-  assert.equal(metadata.version, '0.0.4');
+  assert.equal(metadata.version, '0.0.6');
   const record = producerRecord();
   const actual = assertCleanupRecord(record);
   assert.equal(actual.targetApiMutationCount, 0);
   assert.equal(actual.event.eventType, 'ccv2.build-cleanup.completed');
   assert.equal(actual.result.counts.scanned, 105);
   assert.equal(actual.result.counts.skipped, 105);
-  assert.equal(parseNotificationEventJson(record.outputs['notification-event']).status, 'failure');
+  assert.equal(parseNotificationEventJson(record.outputs['notification-event']).status, 'warning');
 });
 
 test('shared lifecycle seeds only isolated control plane, validates repeat output, masks secrets and cleans private state', async () => {
@@ -523,4 +532,35 @@ test('cleanup control whitelist permits only the supported run-scoped fixture pa
         },
       }),
     );
+});
+
+test('current blocked dry-run requires warning, complete input context and accurate protection issues/counts', () => {
+  for (const mutate of [
+    (event) => {
+      event.status = 'failure';
+    },
+    (event) => {
+      event.data.protectedCount = 14;
+    },
+    (event) => {
+      event.data.blockedCount = 91;
+    },
+    (event) => {
+      delete event.data.issues;
+    },
+    (event) => {
+      event.data.issues[0].code = 'unexpected';
+    },
+    (event) => {
+      delete event.data.inputs;
+    },
+    (event) => {
+      event.data.inputsValidated = false;
+    },
+  ]) {
+    const record = producerRecord();
+    mutate(record.event);
+    record.outputs['notification-event'] = JSON.stringify(record.event);
+    assert.throws(() => assertCleanupRecord(record));
+  }
 });

@@ -1,0 +1,290 @@
+{
+  "schemaVersion": 1,
+  "classification": "unpublished-source-candidate",
+  "outcome": "PASS",
+  "sources": {
+    "contract": {
+      "sourceSha": "475cc4db42f79310240496201f90d7047aa54330",
+      "gitTree": "9a42427d4aaf3521dd07be29cdf6425ec24cf8e0",
+      "dirty": false,
+      "dirtyFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "59520de20d79d6258d80313ca98b8822872cd19726b5cd3a5748550998065cb6",
+      "runtimeHash": "928fc17ec18c9275afa219014c6558ec9e5f36b08f91c267fe7c365034af56be"
+    },
+    "sandbox": {
+      "sourceSha": "ad7a4be86f60243f9005cea9feb63abbf9dbf01a",
+      "gitTree": "73f7db75196fa9e0c503e601a6bf8d4ed3777922",
+      "dirty": false,
+      "dirtyFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "637f8e178e9374f827313eb6b9ef8fbd2830e5ee142f99875edcba48abbc7e06",
+      "runtimeHash": "f4608db903921e58fb32216e5eb8987f677c0bd6a8eb712388de568f62c26bc9"
+    },
+    "setup-commercekit": {
+      "sourceSha": "5b8f44d20ecefa8196800f9c90ee5ecf79e48a5c",
+      "gitTree": "08009ed2efa2a4829f24de4b561ada4130ee0190",
+      "dirty": false,
+      "dirtyFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "9149bfd646435bfec2429f063813b6f052f491980bf8bd29c2b08f209c3dd51a",
+      "runtimeHash": "5289f978933c2d9040fdea0277155a07de992b254399eff798cda04dfd8ee19c",
+      "bundleSha256": "ccec5024b018a009fada020bb6cebe292160b45cc2ee1224f6e4d957d9c81bae",
+      "consumerRuntimeHash": "5289f978933c2d9040fdea0277155a07de992b254399eff798cda04dfd8ee19c"
+    },
+    "ccv2-build": {
+      "sourceSha": "5b74b36aa661c21835ab57190bf4950cd842fc5c",
+      "gitTree": "b31a28172a98b2d71f3c65435472c9d0ba92e4a4",
+      "dirty": false,
+      "dirtyFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "a086df9b32919db171077904d40b4e8c178ef23a2b165f12278c752bc325d6b6",
+      "runtimeHash": "7bcac173ccdd28444cec3a051dfd44f6f16cefa82b9abc319a55bc1f7fc0764e",
+      "bundleSha256": "2f0f11dfe5318bafd8973cfc110714030b412f503f9303bf0a69101dbeeeb76a",
+      "consumerRuntimeHash": "7bcac173ccdd28444cec3a051dfd44f6f16cefa82b9abc319a55bc1f7fc0764e"
+    },
+    "ccv2-deploy": {
+      "sourceSha": "56e037ca68d5adbc53438733020b65a8b4f65b2f",
+      "gitTree": "83e4599e106a6e4dea79c44d0538d9b099015347",
+      "dirty": false,
+      "dirtyFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "1185e0b2f3a98d687d796ba3073898c1f7905f89b1f494470579a1eb5c003d9d",
+      "runtimeHash": "68ca8c38904594e451c156fd87d41c54fed98c4fb178b4de889bf103fb52d4f6",
+      "bundleSha256": "540d42a2072000d1ffa884c22a7eac933233a5a584c6831be85a1472d1e7744e",
+      "consumerRuntimeHash": "68ca8c38904594e451c156fd87d41c54fed98c4fb178b4de889bf103fb52d4f6"
+    },
+    "ccv2-build-cleanup": {
+      "sourceSha": "4686db93bbf0accbf232a82874421920d4598b56",
+      "gitTree": "8f5a8f61091ea687efc55cc2bd4888e122a4faff",
+      "dirty": false,
+      "dirtyFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "2c3fe7acfa7839ed5487c0e59e97f9ddc5379eb3ef596bc7413bc4acdb73bc3f",
+      "runtimeHash": "bdab709815b363e9d3f9583a162a9bba4861e28674c1874001097cc7afd7650d",
+      "bundleSha256": "4aa35bc6852278754182751b7897364f9a3d1605f6f9967ea9d469a66b564b96",
+      "consumerRuntimeHash": "bdab709815b363e9d3f9583a162a9bba4861e28674c1874001097cc7afd7650d"
+    },
+    "notify": {
+      "sourceSha": "41e699d13bd183bd51551e45c386cf9e8f77d6dd",
+      "gitTree": "89d5e86dbaab9e1baedd42750c401b3b224d0fd4",
+      "dirty": false,
+      "dirtyFingerprint": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "sourceHash": "837525bc85bfb2202df000e17a5f069250f9779cb8d1c09b2a8f5f5b6e35ff5a",
+      "runtimeHash": "158fb9413630c52c842bff8b830c73dfd22c2f093fd45537522151be71ef9aee",
+      "bundleSha256": "e9142b35852702017cd44d067c3681ad1bb6e5c2b13ec6f4d666919539d4ac92",
+      "consumerRuntimeHash": "158fb9413630c52c842bff8b830c73dfd22c2f093fd45537522151be71ef9aee"
+    }
+  },
+  "harnessSource": {
+    "sourceSha": "unborn-private-workspace",
+    "gitTree": "unborn-private-workspace",
+    "dirty": true,
+    "dirtyFingerprint": "df9896fa3afcbdc67af0d78ede614c95272136ac5c945245a1fe43a68ec475d6",
+    "sourceHash": "65225fbea4f27de0fc05d418fefee00bb0ce2ef6886add133d234f7778c41d4e",
+    "runtimeHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "harnessCode": {
+    "validate-reporting-candidates.mjs": "3d72761981d65cb1421a5d6ba48a3c920646a4f9fcc980a83dd8362fdb071feb",
+    "candidate-support.mjs": "f7edfd04b07ac1e8bb9717506d4c5a026e0fe74ac2f436f3441cdccdef24aa27",
+    "candidate-fetch-preload.mjs": "bf2bf2a06a2682556fd8f2a7ca4769917716a52f166a79156d5730d8beb3745c",
+    "scenarios.mjs": "17242ee5ff979a641d27ea51f10e1ac4b206272f49d63c2149f7f361b097852b",
+    "runtime.mjs": "955bc6316b4bad8283af5ea970aa0a23bd22779077bedb5c70f2eaa1c9304ce6"
+  },
+  "contract": {
+    "version": "0.0.6",
+    "sha256": "e4b79576328c2992a96fed087e9ba6e63970e8b54d6fca976a6652702a7a73a9",
+    "integrity": "sha512-n6F84900sDPBeYm5dnf8HLCM9B2DUVATEeF717dqKsSXTJtq1FIj/3hZ2UcNTtXe7v8R90HYF6HIom4auM8Kyw=="
+  },
+  "scenarios": [
+    {
+      "action": "ccv2-build",
+      "scenario": "rolling-success",
+      "status": "success",
+      "summarySha256": "18d3bab23d22e177aa3840e542fdf6a16d7c4ece9ff61cfb244f266bd4eea7bc"
+    },
+    {
+      "action": "ccv2-deploy",
+      "scenario": "rolling-success",
+      "status": "success",
+      "summarySha256": "c95930740776e4ab82b61edc80e00766e3d26764f9b3087d50cb05d2fc925e8e"
+    },
+    {
+      "action": "ccv2-build",
+      "scenario": "build-failure",
+      "status": "failure",
+      "summarySha256": "dbafccfb07ba9167391eddf67491802d9788e8487af08690241fcaeea6f26e4d"
+    },
+    {
+      "action": "ccv2-build",
+      "scenario": "green-manual",
+      "status": "success",
+      "summarySha256": "b466dd3553c9294fceb3fa5a279dbe9cc196c905b53ec3a56c3c36f6217e7f67"
+    },
+    {
+      "action": "ccv2-deploy",
+      "scenario": "green-manual",
+      "status": "action-required",
+      "summarySha256": "9790948ea352dfb67a824187d6bd83da48132fce2bbbcdcd497bda6bb138798f"
+    },
+    {
+      "action": "ccv2-build-cleanup",
+      "scenario": "first",
+      "status": "warning",
+      "targetMutations": 0,
+      "summarySha256": "b98a8283447d5e8aa590d51d3f4e9350969f72632b9bf1b3ac8a7b3916e25418"
+    },
+    {
+      "action": "ccv2-build-cleanup",
+      "scenario": "repeat",
+      "status": "warning",
+      "targetMutations": 0,
+      "summarySha256": "68710647dee3d027005fbf1dbd14aa8235d80793854b0424610e27d6edc672e9"
+    },
+    {
+      "action": "setup-commercekit",
+      "scenario": "invalid-input",
+      "status": "failure",
+      "networkCalls": 0,
+      "summarySha256": "ba840f18849cc1af5242677fbaa1964f723896bb768d33c6d6c5536b58b58a2e"
+    },
+    {
+      "action": "notify",
+      "provider": "slack",
+      "sourceStatus": "success",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "6f436da45125caa1792b2ea2e9a6a4f4f8b72856ce6adf59406d418f377efd3c"
+    },
+    {
+      "action": "notify",
+      "provider": "teams-workflow",
+      "sourceStatus": "success",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "408e102af7b11160bf54d81dfcc31816f36545f9cb87f239b6b1fe1168544f71"
+    },
+    {
+      "action": "notify",
+      "provider": "slack",
+      "sourceStatus": "success",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "872caabea56321ba7df7fc933a5b5b338a758f1e9c7c026f314d839abb903e1a"
+    },
+    {
+      "action": "notify",
+      "provider": "teams-workflow",
+      "sourceStatus": "success",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "0b419284de5d7f90a7606ef5eb28049159a0328d4e51689792701e863c890c11"
+    },
+    {
+      "action": "notify",
+      "provider": "slack",
+      "sourceStatus": "failure",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "e895948b5d6e4fe7c847b513f97e6d4a3952289924b99c925387d9c141832c97"
+    },
+    {
+      "action": "notify",
+      "provider": "teams-workflow",
+      "sourceStatus": "failure",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "857148678d7352d33de1022b5b5eaa056826a925ffee200440d0b82c3c3ff5bd"
+    },
+    {
+      "action": "notify",
+      "provider": "slack",
+      "sourceStatus": "success",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "438e7fbf21bae11802454a07997061c34bb3472c5b19524e71b68736b11a43ce"
+    },
+    {
+      "action": "notify",
+      "provider": "teams-workflow",
+      "sourceStatus": "success",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "408e102af7b11160bf54d81dfcc31816f36545f9cb87f239b6b1fe1168544f71"
+    },
+    {
+      "action": "notify",
+      "provider": "slack",
+      "sourceStatus": "action-required",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "3499ace33695fc7159f5fe206ad99ecc20336d1e85d09addf7f471233950388b"
+    },
+    {
+      "action": "notify",
+      "provider": "teams-workflow",
+      "sourceStatus": "action-required",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "5038fde726e22dda104f6f0b3ff0a41e2489db0366be73bda818113c9b9262b1"
+    },
+    {
+      "action": "notify",
+      "provider": "slack",
+      "sourceStatus": "warning",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "a061872ca8b70a1980e3cf5b1d3a0951046161819bcffe16e39fced0f97ce397"
+    },
+    {
+      "action": "notify",
+      "provider": "teams-workflow",
+      "sourceStatus": "warning",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "808a9198c58e28d2142e80ea881bcedba3777da4548dd3f3734b1b398f713652"
+    },
+    {
+      "action": "notify",
+      "provider": "slack",
+      "sourceStatus": "failure",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "d638dc5e2373659d01d2513da6cfec4debda66ccd0cda10c0d2994ed49c7c477"
+    },
+    {
+      "action": "notify",
+      "provider": "teams-workflow",
+      "sourceStatus": "failure",
+      "delivered": true,
+      "mockedRequests": 1,
+      "summarySha256": "3c99cdfc67b54353943d4b03f88c379346270e91cbab3a61df7eeb804d62c2c2"
+    },
+    {
+      "action": "notify",
+      "scenario": "delivery-error",
+      "status": "warning",
+      "mockedRequests": 1,
+      "summarySha256": "d22cb4d63482132d3c98d826f21a967ea64e861b65dfa0f88592b3d0127bec89"
+    },
+    {
+      "action": "notify",
+      "scenario": "delivery-error",
+      "status": "failure",
+      "mockedRequests": 1,
+      "summarySha256": "62b056ad83828440be0923339bc5fe602709db3576d35db4591d6984d4d3f348"
+    }
+  ],
+  "localOnly": true,
+  "providerRequestsMocked": true,
+  "hostedDispatches": 0,
+  "realSapCalls": 0,
+  "validatedRunsCreated": 4,
+  "validatedRunsRemoved": 4,
+  "lastChild": {
+    "action": "notify",
+    "exitCode": 1,
+    "network": {
+      "attempted": 1,
+      "sandbox": 0,
+      "mockProvider": 1,
+      "blocked": 0
+    },
+    "summaryBytes": 783
+  },
+  "durationMs": 55708
+}

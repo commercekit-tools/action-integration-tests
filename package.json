@@ -17,12 +17,13 @@
     "policy": "node scripts/check-policy.mjs",
     "scan:public": "node scripts/scan-public.mjs",
     "audit": "pnpm audit --audit-level=high",
-    "quality": "pnpm format:check && pnpm lint && pnpm test && pnpm policy && pnpm scan:public && pnpm audit"
+    "quality": "pnpm format:check && pnpm lint && pnpm test && pnpm policy && pnpm scan:public && pnpm audit",
+    "test:reporting": "node scripts/validate-reporting.mjs"
   },
   "dependencies": {
     "@actions/core": "3.0.1",
     "@commercekit-tools/ccv2-client": "0.0.3",
-    "@commercekit-tools/notification-contract": "0.0.4"
+    "@commercekit-tools/notification-contract": "0.0.6"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

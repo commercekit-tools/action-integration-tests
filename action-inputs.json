@@ -1,0 +1,71 @@
+{
+  "commercekit-tools/ccv2-build": {
+    "ref": "fc65ee281f39b98d2cecad36ff93d40cf055fbc2",
+    "inputs": [
+      "token-endpoint",
+      "client-id",
+      "client-secret",
+      "resource",
+      "subscription-code",
+      "branch",
+      "build-name",
+      "application-code",
+      "api-base-url",
+      "poll-interval-seconds",
+      "timeout-minutes"
+    ]
+  },
+  "commercekit-tools/ccv2-deploy": {
+    "ref": "1af852b9a00e981da4ea13565bb18c7ce7fda27f",
+    "inputs": [
+      "operation",
+      "token-endpoint",
+      "client-id",
+      "client-secret",
+      "resource",
+      "subscription-code",
+      "deployment-code",
+      "build-code",
+      "environment-code",
+      "database-update-mode",
+      "strategy",
+      "validate-deployment-modes",
+      "green-decision",
+      "decision-reason",
+      "traffic-split-json",
+      "rollback-database",
+      "cancel-reason",
+      "wait-for-completion",
+      "api-base-url",
+      "poll-interval-seconds",
+      "timeout-minutes"
+    ]
+  },
+  "commercekit-tools/notify": {
+    "ref": "abc752ead104a6e5153c5f166d04ee5e595e0ca6",
+    "inputs": ["provider", "event-json", "event-file", "webhook-url", "fail-on-notification-error"]
+  },
+  "commercekit-tools/ccv2-build-cleanup": {
+    "ref": "8b1786b731be8d2d3fac137cd358d2ee5488bd58",
+    "inputs": [
+      "token-endpoint",
+      "client-id",
+      "client-secret",
+      "resource",
+      "subscription-code",
+      "api-base-url",
+      "application-code",
+      "retention-days",
+      "keep-latest",
+      "dry-run",
+      "max-deletions",
+      "exclude-build-codes",
+      "timeout-minutes",
+      "continue-on-delete-error"
+    ]
+  },
+  "commercekit-tools/setup-commercekit": {
+    "ref": "52a5a098d89f9ef2c42a234b4c3baa5d60a7a896",
+    "inputs": ["version"]
+  }
+}
