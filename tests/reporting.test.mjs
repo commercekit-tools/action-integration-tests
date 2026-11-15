@@ -5,17 +5,18 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
-  assertCandidateManifest,
+  assertReportingManifest,
+  assertRegistryInstall,
   assertLoopbackOrigin,
   assertSummary,
-  candidateActionNames,
+  reportingActionNames,
   effectiveInputs,
   parseActionOutputs,
   plainSummary,
   sha256,
   sourceProvenance,
-} from '../scripts/candidate-support.mjs';
-import { validateReportingCandidates } from '../scripts/validate-reporting-candidates.mjs';
+} from '../scripts/reporting-support.mjs';
+import { validateReporting } from '../scripts/validate-reporting.mjs';
 
 function manifest() {
   const source = {
@@ -25,23 +26,27 @@ function manifest() {
   };
   return {
     schemaVersion: 1,
-    classification: 'unpublished-source-candidate',
+    classification: 'registry-installed',
     contract: {
       ...source,
+      version: '0.0.6',
+      registryTarball:
+        'https://npm.pkg.github.com/download/@commercekit-tools/notification-contract/0.0.6/' +
+        'a'.repeat(40),
       tarball: join(tmpdir(), 'contract.tgz'),
       sha256: 'c'.repeat(64),
       integrity: 'sha512-' + 'YQ==',
     },
     sandbox: { ...source },
     actions: Object.fromEntries(
-      candidateActionNames.map((name) => [
+      reportingActionNames.map((name) => [
         name,
         { ...source, consumerPath: join(tmpdir(), name), bundleSha256: 'd'.repeat(64) },
       ]),
     ),
   };
 }
-test('candidate local origins require explicit HTTPS loopback and bounded port', () => {
+test('reporting local origins require explicit HTTPS loopback and bounded port', () => {
   assert.equal(assertLoopbackOrigin('https://localhost:18987'), 'https://localhost:18987');
   assert.equal(assertLoopbackOrigin('https://127.0.0.1:18987/'), 'https://127.0.0.1:18987');
   assert.equal(assertLoopbackOrigin('https://[::1]:18987/'), 'https://[::1]:18987');
@@ -57,11 +62,11 @@ test('candidate local origins require explicit HTTPS loopback and bounded port',
   ])
     assert.throws(() => assertLoopbackOrigin(value));
 });
-test('invalid candidate origin fails before package checks or any network/subprocess work', async () => {
-  await assert.rejects(validateReportingCandidates({}, 'https://production.example'));
+test('invalid reporting origin fails before package checks or any network/subprocess work', async () => {
+  await assert.rejects(validateReporting({}, 'https://production.example'));
 });
-test('candidate artifact manifest requires exact hashes and all five real consumers', () => {
-  assert.equal(assertCandidateManifest(manifest()).classification, 'unpublished-source-candidate');
+test('reporting artifact manifest requires exact hashes and all five real consumers', () => {
+  assert.equal(assertReportingManifest(manifest()).classification, 'registry-installed');
   for (const mutate of [
     (value) => {
       value.classification = 'registry-release';
@@ -93,7 +98,7 @@ test('candidate artifact manifest requires exact hashes and all five real consum
   ]) {
     const value = manifest();
     mutate(value);
-    assert.throws(() => assertCandidateManifest(value));
+    assert.throws(() => assertReportingManifest(value));
   }
 });
 test('actual GitHub output parsing retains multiline event JSON and rejects ambiguous records', () => {
@@ -137,7 +142,7 @@ test('summary assertions check status/table/input coverage and reject confidenti
   assert.equal(plainSummary('\\[REDACTED\\] &lt;tag&gt; &amp; safe'), '[REDACTED] <tag> & safe');
 });
 test('source evidence records committed identity, runtime digest and dirty fingerprint', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'candidate-provenance-test-'));
+  const directory = await mkdtemp(join(tmpdir(), 'reporting-provenance-test-'));
   try {
     execFileSync('git', ['init', '--quiet'], { cwd: directory });
     await writeFile(join(directory, 'action.yml'), 'runs: {using: node24}\n');
@@ -176,7 +181,7 @@ test('source evidence records committed identity, runtime digest and dirty finge
 });
 
 test('the actual child preload blocks external fetch and native HTTPS without network', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'candidate-preload-test-'));
+  const directory = await mkdtemp(join(tmpdir(), 'reporting-preload-test-'));
   try {
     const certificate = join(directory, 'unused-ca.pem');
     await writeFile(certificate, 'unused synthetic certificate; no connection is made');
@@ -184,7 +189,7 @@ test('the actual child preload blocks external fetch and native HTTPS without ne
       process.execPath,
       [
         '--import',
-        new URL('../scripts/candidate-fetch-preload.mjs', import.meta.url).pathname,
+        new URL('../scripts/reporting-fetch-preload.mjs', import.meta.url).pathname,
         '--input-type=module',
         '-e',
         `
@@ -198,9 +203,9 @@ test('the actual child preload blocks external fetch and native HTTPS without ne
         stdio: 'pipe',
         timeout: 5000,
         env: {
-          COMMERCEKIT_CANDIDATE_MODE: 'deny',
-          COMMERCEKIT_CANDIDATE_LOCAL_ORIGIN: 'https://localhost:18987',
-          COMMERCEKIT_CANDIDATE_CA_FILE: certificate,
+          COMMERCEKIT_REPORTING_MODE: 'deny',
+          COMMERCEKIT_REPORTING_LOCAL_ORIGIN: 'https://localhost:18987',
+          COMMERCEKIT_REPORTING_CA_FILE: certificate,
         },
       },
     );
@@ -215,11 +220,11 @@ test('the actual child preload blocks external fetch and native HTTPS without ne
   }
 });
 
-test('candidate child cancellation terminates a process even if it ignores SIGTERM', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'candidate-cancellation-test-'));
+test('reporting child cancellation terminates a process even if it ignores SIGTERM', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'reporting-cancellation-test-'));
   try {
     const { mkdir } = await import('node:fs/promises');
-    const { runCandidateBundle } = await import('../scripts/candidate-support.mjs');
+    const { runReportingBundle } = await import('../scripts/reporting-support.mjs');
     const source = join(directory, 'consumer');
     await mkdir(join(source, 'dist'), { recursive: true });
     await writeFile(
@@ -233,14 +238,14 @@ test('candidate child cancellation terminates a process even if it ignores SIGTE
     const started = Date.now();
     try {
       await assert.rejects(
-        runCandidateBundle({
+        runReportingBundle({
           action: { consumerPath: source },
           directory: join(directory, 'child'),
           inputs: {},
           mode: 'deny',
           localOrigin: 'https://localhost:18987',
           caFile: certificate,
-          preload: new URL('../scripts/candidate-fetch-preload.mjs', import.meta.url).pathname,
+          preload: new URL('../scripts/reporting-fetch-preload.mjs', import.meta.url).pathname,
           signal: controller.signal,
         }),
       );
@@ -250,5 +255,54 @@ test('candidate child cancellation terminates a process even if it ignores SIGTE
     }
   } finally {
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('registry installation proof rejects local links, ranges, integrity drift and foreign registry hosts', () => {
+  const artifact = manifest().contract;
+  const pkg = {
+    private: true,
+    dependencies: { '@commercekit-tools/notification-contract': '0.0.6' },
+  };
+  const lock = {
+    importers: {
+      '.': {
+        dependencies: {
+          '@commercekit-tools/notification-contract': { specifier: '0.0.6', version: '0.0.6' },
+        },
+      },
+    },
+    packages: {
+      '@commercekit-tools/notification-contract@0.0.6': {
+        resolution: { integrity: artifact.integrity, tarball: artifact.registryTarball },
+      },
+    },
+  };
+  assertRegistryInstall(pkg, lock, artifact);
+  for (const dependency of ['^0.0.6', 'preview', 'file:/private/tmp/package.tgz'])
+    assert.throws(() =>
+      assertRegistryInstall(
+        { ...pkg, dependencies: { '@commercekit-tools/notification-contract': dependency } },
+        lock,
+        artifact,
+      ),
+    );
+  for (const mutate of [
+    (value) => {
+      value.importers['.'].dependencies['@commercekit-tools/notification-contract'].version =
+        '0.0.4';
+    },
+    (value) => {
+      value.packages['@commercekit-tools/notification-contract@0.0.6'].resolution.integrity =
+        'sha512-wrong';
+    },
+    (value) => {
+      value.packages['@commercekit-tools/notification-contract@0.0.6'].resolution.tarball =
+        'https://registry.example/private.tgz';
+    },
+  ]) {
+    const changed = structuredClone(lock);
+    mutate(changed);
+    assert.throws(() => assertRegistryInstall(pkg, changed, artifact));
   }
 });

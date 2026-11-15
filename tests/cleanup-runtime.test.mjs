@@ -232,7 +232,7 @@ test('cleanup catalog is isolated, multipage, mixed and leaves existing suites u
 });
 
 test('cleanup producer uses actual published shared factory/parser with accurate blocked dry-run counts', () => {
-  assert.equal(metadata.version, '0.0.4');
+  assert.equal(metadata.version, '0.0.6');
   const record = producerRecord();
   const actual = assertCleanupRecord(record);
   assert.equal(actual.targetApiMutationCount, 0);

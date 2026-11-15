@@ -6,7 +6,7 @@ import https from 'node:https';
 import { isAbsolute, join, resolve } from 'node:path';
 import { parse } from 'yaml';
 
-export const candidateActionNames = Object.freeze([
+export const reportingActionNames = Object.freeze([
   'setup-commercekit',
   'ccv2-build',
   'ccv2-deploy',
@@ -29,13 +29,15 @@ export function assertLoopbackOrigin(value) {
   return url.origin;
 }
 
-export function assertCandidateManifest(manifest) {
+export function assertReportingManifest(manifest) {
   assert.equal(manifest?.schemaVersion, 1);
-  assert.equal(manifest?.classification, 'unpublished-source-candidate');
+  assert.equal(manifest?.classification, 'registry-installed');
+  assert.equal(manifest.contract?.version, '0.0.6');
+  assertRegistryTarball(manifest.contract?.registryTarball);
   assert(hex.test(manifest.contract?.sha256 ?? ''));
   assert(/^sha512-[A-Za-z0-9+/]+=*$/.test(manifest.contract?.integrity ?? ''));
-  assert.equal(Object.keys(manifest.actions ?? {}).length, candidateActionNames.length);
-  for (const name of candidateActionNames) {
+  assert.equal(Object.keys(manifest.actions ?? {}).length, reportingActionNames.length);
+  for (const name of reportingActionNames) {
     const action = manifest.actions[name];
     assert(action && isAbsolute(action.sourcePath) && isAbsolute(action.consumerPath));
     assert(gitSha.test(action.sourceSha ?? '') && hex.test(action.sourceHash ?? ''));
@@ -47,6 +49,29 @@ export function assertCandidateManifest(manifest) {
   }
   assert(isAbsolute(manifest.contract.tarball) && manifest.contract.tarball.endsWith('.tgz'));
   return manifest;
+}
+
+export function assertRegistryTarball(value) {
+  const url = new URL(value);
+  assert.equal(url.origin, 'https://npm.pkg.github.com');
+  assert.equal(url.username + url.password + url.search + url.hash, '');
+  assert(
+    /^\/download\/@commercekit-tools\/notification-contract\/0\.0\.6\/[a-f0-9]{40}$/.test(
+      url.pathname,
+    ),
+  );
+  return url.href;
+}
+
+/** A frozen normal registry dependency must match the reviewed public artifact. */
+export function assertRegistryInstall(manifest, lock, artifact) {
+  assert.equal(manifest.private, true);
+  assert.equal(manifest.dependencies['@commercekit-tools/notification-contract'], '0.0.6');
+  const direct = lock.importers?.['.']?.dependencies?.['@commercekit-tools/notification-contract'];
+  assert.deepEqual(direct, { specifier: '0.0.6', version: '0.0.6' });
+  const resolution = lock.packages?.['@commercekit-tools/notification-contract@0.0.6']?.resolution;
+  assert.equal(resolution?.integrity, artifact.integrity);
+  assert.equal(assertRegistryTarball(resolution?.tarball), artifact.registryTarball);
 }
 
 function git(cwd, args) {
@@ -224,7 +249,7 @@ export function effectiveInputs(metadata, overrides) {
   return { ...values, ...overrides };
 }
 
-export async function runCandidateBundle({
+export async function runReportingBundle({
   action,
   directory,
   inputs,
@@ -251,10 +276,10 @@ export async function runCandidateBundle({
     GITHUB_RUN_ID: '123',
     GITHUB_RUN_ATTEMPT: '1',
     GITHUB_SERVER_URL: 'https://github.com',
-    COMMERCEKIT_CANDIDATE_MODE: mode,
-    COMMERCEKIT_CANDIDATE_LOCAL_ORIGIN: localOrigin,
-    COMMERCEKIT_CANDIDATE_CA_FILE: caFile,
-    COMMERCEKIT_CANDIDATE_MOCK_STATUS: String(mockStatus),
+    COMMERCEKIT_REPORTING_MODE: mode,
+    COMMERCEKIT_REPORTING_LOCAL_ORIGIN: localOrigin,
+    COMMERCEKIT_REPORTING_CA_FILE: caFile,
+    COMMERCEKIT_REPORTING_MOCK_STATUS: String(mockStatus),
     NODE_EXTRA_CA_CERTS: caFile,
   };
   for (const [name, value] of Object.entries(inputs)) env[`INPUT_${name.toUpperCase()}`] = value;
@@ -301,7 +326,7 @@ export async function runCandidateBundle({
   return { outputs, summary, network, code, ...(payload ? { payload } : {}) };
 }
 
-export function resolveCandidatePath(value) {
+export function resolveReportingPath(value) {
   assert(typeof value === 'string' && isAbsolute(value));
   return resolve(value);
 }

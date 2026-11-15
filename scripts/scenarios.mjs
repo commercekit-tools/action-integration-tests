@@ -55,7 +55,7 @@ export const providers = Object.freeze(['none', 'slack', 'teams-workflow']);
 export const phases = Object.freeze(['build', 'initial', 'followup', 'final']);
 export const cleanupScenarioId = 'cleanup-dry-run';
 /** Opt-in local reporting matrix; never added to the hosted suite plans. */
-export const reportingCandidateScenarioIds = Object.freeze([
+export const reportingScenarioIds = Object.freeze([
   'rolling-success',
   'build-failure',
   'green-manual',

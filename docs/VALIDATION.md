@@ -1,5 +1,28 @@
 # Workflow validation — updated 2026-11-15 (UTC)
 
+## Published 0.0.6 registry transition
+
+The authorized package-only [run 43678067818](https://github.com/commercekit-tools/action-kit/actions/runs/43678067818)
+published notification-contract 0.0.6 from main
+`3fecce40414d709884fa48e48eca278f470b20b0`. This harness now installs exact
+registry 0.0.6 with client 0.0.3 unchanged. Frozen installation, independent
+registry tarball SHA256/SRI/byte proof and the complete ordinary `pnpm quality`
+passed: **72 offline tests, zero skips**, format/lint, unchanged workflow policy,
+public scan and audit with no known vulnerabilities.
+
+The local reporting command now requires normal registry manifests/locks and
+installed public package bytes; candidate-only overrides were retired. The
+combined five normal registry bundle replay and final reviewed merged Action
+pins are in progress. See [current reporting evidence](REPORTING.md); prior
+source-candidate evidence remains [historical](REPORTING-CANDIDATES.md). New
+hosted dispatches and live provider/SAP validation have not run.
+
+## Historical 0.0.4 baseline and hosted workflow evidence
+
+The remaining sections record earlier published 0.0.4 Action pins and their
+executed workflows. Their legacy failure-status cleanup event assertions do
+not describe the new 0.0.6 warning vocabulary or establish a new hosted run.
+
 This record distinguishes offline/local validation from owner-authorized hosted
 Sandbox execution. Both new manual workflows completed successfully after PR #1
 merged. No provider send, real SAP operation, release, tag, package publication or

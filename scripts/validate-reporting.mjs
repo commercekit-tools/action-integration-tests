@@ -1,4 +1,4 @@
-/** Opt-in local candidate integration. Never dispatches a workflow or sends provider requests. */
+/** Opt-in local registry-installed integration. Never dispatches a workflow or sends provider requests. */
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import { createHash, generateKeyPairSync } from 'node:crypto';
@@ -8,24 +8,26 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as contract from '@commercekit-tools/notification-contract';
 import { createRequire } from 'node:module';
+import { parse as parseYaml } from 'yaml';
 const requirePublic = createRequire(import.meta.url);
 const metadata = requirePublic('@commercekit-tools/notification-contract/package.json');
 const publicSchema = requirePublic('@commercekit-tools/notification-contract/schema');
 import {
   actionMetadata,
-  assertCandidateManifest,
+  assertReportingManifest,
+  assertRegistryInstall,
   assertLoopbackOrigin,
   assertSummary,
-  candidateActionNames,
+  reportingActionNames,
   effectiveInputs,
   localSandboxFetch,
   plainSummary,
-  resolveCandidatePath,
-  runCandidateBundle,
+  resolveReportingPath,
+  runReportingBundle,
   sandboxOrigin,
   sha256,
   sourceProvenance,
-} from './candidate-support.mjs';
+} from './reporting-support.mjs';
 import {
   assertActionRecord,
   assertCleanupRecord,
@@ -34,7 +36,7 @@ import {
   runCommand,
   subscription,
 } from './runtime.mjs';
-import { getScenario, reportingCandidateScenarioIds } from './scenarios.mjs';
+import { getScenario, reportingScenarioIds } from './scenarios.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const maximumRuntimeMs = 270000;
@@ -130,14 +132,14 @@ function assertProducerContext(event, markdown, definition, secrets) {
 }
 
 async function verifyArtifacts(manifest) {
-  assertCandidateManifest(manifest);
+  assertReportingManifest(manifest);
   assert.equal(process.versions.node.split('.')[0], '24');
   assert.equal(metadata.version, '0.0.6');
   const own = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
-  assert.equal(own.private, true);
-  assert.equal(
-    own.dependencies['@commercekit-tools/notification-contract'],
-    `file:${manifest.contract.tarball}`,
+  assertRegistryInstall(
+    own,
+    parseYaml(await readFile(join(root, 'pnpm-lock.yaml'), 'utf8')),
+    manifest.contract,
   );
   const tarballStat = await lstat(manifest.contract.tarball);
   assert(tarballStat.isFile() && !tarballStat.isSymbolicLink() && tarballStat.size <= 1024 * 1024);
@@ -193,7 +195,7 @@ async function verifyArtifacts(manifest) {
       assert.equal(
         consumerProof.runtimeHash,
         proof.runtimeHash,
-        'Candidate runtime source differs from reviewed source.',
+        'Reporting runtime source differs from reviewed source.',
       );
       assert.equal(
         sha256(await readFile(join(item.consumerPath, 'dist/index.js'))),
@@ -202,10 +204,10 @@ async function verifyArtifacts(manifest) {
       sources[name].bundleSha256 = item.bundleSha256;
       sources[name].consumerRuntimeHash = consumerProof.runtimeHash;
       const consumer = JSON.parse(await readFile(join(item.consumerPath, 'package.json'), 'utf8'));
-      assert.equal(consumer.private, true);
-      assert.equal(
-        consumer.dependencies['@commercekit-tools/notification-contract'],
-        `file:${manifest.contract.tarball}`,
+      assertRegistryInstall(
+        consumer,
+        parseYaml(await readFile(join(item.consumerPath, 'pnpm-lock.yaml'), 'utf8')),
+        manifest.contract,
       );
       assert.deepEqual(
         consumer.scripts,
@@ -263,8 +265,8 @@ async function startLocalSandbox(manifest, temporary, localOrigin, signal) {
     MOCK_JWT_ISSUER: sandboxOrigin,
     MOCK_JWT_PRIVATE_KEY: pair.privateKey.export({ format: 'pem', type: 'pkcs8' }),
     MOCK_JWT_PUBLIC_JWK: JSON.stringify(pair.publicKey.export({ format: 'jwk' })),
-    MOCK_JWT_KID: 'reporting-local-candidate',
-    RUN_TOKEN_SIGNING_KEY: 'synthetic-reporting-candidate-local-only-signing-key',
+    MOCK_JWT_KID: 'reporting-local-reporting',
+    RUN_TOKEN_SIGNING_KEY: 'synthetic-reporting-reporting-local-only-signing-key',
   };
   const envFile = join(temporary, 'sandbox.env');
   await writeFile(
@@ -336,20 +338,20 @@ async function startLocalSandbox(manifest, temporary, localOrigin, signal) {
   }
 }
 
-export async function validateReportingCandidates(manifest, localOrigin) {
+export async function validateReporting(manifest, localOrigin) {
   assertLoopbackOrigin(localOrigin); // Validate before artifact reads, network, or subprocesses.
   const sources = await verifyArtifacts(manifest);
   const harnessSource = await sourceProvenance(root, { allowUnborn: true });
   const definitions = Object.fromEntries(
     await Promise.all(
-      candidateActionNames.map(async (name) => [
+      reportingActionNames.map(async (name) => [
         name,
         await actionMetadata(manifest.actions[name].sourcePath),
       ]),
     ),
   );
   const started = Date.now();
-  const temporary = await mkdtemp(join(tmpdir(), 'commercekit-reporting-candidate-'));
+  const temporary = await mkdtemp(join(tmpdir(), 'commercekit-reporting-reporting-'));
   const cancellation = new AbortController();
   const timer = setTimeout(() => cancellation.abort(), maximumRuntimeMs);
   const cancel = () => cancellation.abort();
@@ -357,16 +359,16 @@ export async function validateReportingCandidates(manifest, localOrigin) {
   process.once('SIGTERM', cancel);
   const evidence = {
     schemaVersion: 1,
-    classification: 'unpublished-source-candidate',
+    classification: 'registry-installed',
     outcome: 'FAIL',
     sources,
     harnessSource,
     harnessCode: Object.fromEntries(
       await Promise.all(
         [
-          'validate-reporting-candidates.mjs',
-          'candidate-support.mjs',
-          'candidate-fetch-preload.mjs',
+          'validate-reporting.mjs',
+          'reporting-support.mjs',
+          'reporting-fetch-preload.mjs',
           'scenarios.mjs',
           'runtime.mjs',
         ].map(async (file) => [file, sha256(await readFile(join(root, 'scripts', file)))]),
@@ -387,12 +389,12 @@ export async function validateReportingCandidates(manifest, localOrigin) {
   };
   let server, active;
   let stage = 'startup';
-  const preload = join(root, 'scripts/candidate-fetch-preload.mjs');
+  const preload = join(root, 'scripts/reporting-fetch-preload.mjs');
   const capturedEvents = [];
   let sequence = 0;
   const action = async (name, inputs, mode = 'sandbox', mockStatus = 200) => {
     cancellation.signal.throwIfAborted();
-    const observed = await runCandidateBundle({
+    const observed = await runReportingBundle({
       action: manifest.actions[name],
       directory: join(temporary, `action-${sequence++}`),
       inputs: effectiveInputs(definitions[name], inputs),
@@ -429,7 +431,7 @@ export async function validateReportingCandidates(manifest, localOrigin) {
     });
   try {
     server = await startLocalSandbox(manifest, temporary, localOrigin, cancellation.signal);
-    for (const scenarioId of reportingCandidateScenarioIds) {
+    for (const scenarioId of reportingScenarioIds) {
       stage = scenarioId;
       const env = scenarioEnvironment(join(temporary, `run-${scenarioId}`), scenarioId);
       const core = testCore();
@@ -609,7 +611,7 @@ export async function validateReportingCandidates(manifest, localOrigin) {
     stage = 'setup-invalid-input';
     const setup = await action(
       'setup-commercekit',
-      { version: 'invalid candidate version' },
+      { version: 'invalid reporting version' },
       'deny',
     );
     assert.equal(setup.code, 1);
@@ -634,8 +636,8 @@ export async function validateReportingCandidates(manifest, localOrigin) {
         stage = `notify-${provider}-${event.status}`;
         const webhook =
           provider === 'slack'
-            ? 'https://' + 'hooks.slack.com/services/candidate/candidate/candidate'
-            : 'https://provider.example.test/candidate';
+            ? 'https://' + 'hooks.slack.com/services/reporting/reporting/reporting'
+            : 'https://provider.example.test/reporting';
         const delivery = await action(
           'notify',
           {
@@ -709,7 +711,7 @@ export async function validateReportingCandidates(manifest, localOrigin) {
         {
           provider: 'teams-workflow',
           'event-json': JSON.stringify(event),
-          'webhook-url': 'https://provider.example.test/candidate',
+          'webhook-url': 'https://provider.example.test/reporting',
           'fail-on-notification-error': failOn,
         },
         'provider-mock',
@@ -756,27 +758,29 @@ export async function validateReportingCandidates(manifest, localOrigin) {
   const reportDirectory = await mkdtemp(join(tmpdir(), 'commercekit-reporting-evidence-'));
   const report = join(reportDirectory, 'validation.json');
   await writeFile(report, JSON.stringify(evidence, null, 2) + '\n', { mode: 0o600 });
-  console.log(`${evidence.outcome}: local candidate ecosystem validation. Evidence: ${report}`);
+  console.log(
+    `${evidence.outcome}: local registry-installed ecosystem validation. Evidence: ${report}`,
+  );
   assert.equal(
     evidence.outcome,
     'PASS',
-    `Candidate validation failed at ${evidence.failureStage ?? 'cleanup'}.`,
+    `Reporting validation failed at ${evidence.failureStage ?? 'cleanup'}.`,
   );
   return evidence;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const path = resolveCandidatePath(process.env.REPORTING_CANDIDATE_MANIFEST);
+    const path = resolveReportingPath(process.env.REPORTING_MANIFEST);
     assert((await lstat(path)).size <= 65536);
     const manifest = JSON.parse(await readFile(path, 'utf8'));
-    await validateReportingCandidates(
+    await validateReporting(
       manifest,
-      process.env.REPORTING_CANDIDATE_LOCAL_ORIGIN ?? 'https://localhost:18987',
+      process.env.REPORTING_LOCAL_ORIGIN ?? 'https://localhost:18987',
     );
   } catch {
     console.error(
-      'Candidate reporting validation failed. No raw Action output, provider response or credentials are logged.',
+      'Registry reporting validation failed. No raw Action output, provider response or credentials are logged.',
     );
     process.exitCode = 1;
   }
