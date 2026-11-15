@@ -23,7 +23,7 @@ runs:
     - name: Deliver test notification
       id: action
       if: steps.inputs.outputs.enabled == 'true' && inputs.provider != 'none'
-      uses: commercekit-tools/notify@8242af6a4aaafd7917c93f0db27f1794266efeee
+      uses: commercekit-tools/notify@abc752ead104a6e5153c5f166d04ee5e595e0ca6
       with:
         provider: ${{ inputs.provider }}
         event-file: ${{ steps.inputs.outputs.event-file }}

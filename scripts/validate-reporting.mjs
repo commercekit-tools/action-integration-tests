@@ -369,11 +369,13 @@ export async function validateReporting(manifest, localOrigin) {
           'validate-reporting.mjs',
           'reporting-support.mjs',
           'reporting-fetch-preload.mjs',
+          'reporting-inputs.mjs',
           'scenarios.mjs',
           'runtime.mjs',
         ].map(async (file) => [file, sha256(await readFile(join(root, 'scripts', file)))]),
       ),
     ),
+    adoptedActionMetadataSha256: sha256(await readFile(join(root, 'action-inputs.json'))),
     contract: {
       version: metadata.version,
       sha256: manifest.contract.sha256,
@@ -475,7 +477,6 @@ export async function validateReporting(manifest, localOrigin) {
               outcome: observed.code === 0 ? 'success' : 'failure',
               run,
               state,
-              notificationStatus: 'warning',
             });
             assert.deepEqual(record.event.data.inputs, record.result.inputs);
             assertProducerContext(

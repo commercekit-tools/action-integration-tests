@@ -7,7 +7,7 @@ published notification-contract 0.0.6 from main
 `3fecce40414d709884fa48e48eca278f470b20b0`. This harness now installs exact
 registry 0.0.6 with client 0.0.3 unchanged. Frozen installation, independent
 registry tarball SHA256/SRI/byte proof and the complete ordinary `pnpm quality`
-passed: **73 offline tests, zero skips**, format/lint, unchanged workflow policy,
+passed: **76 offline tests, zero skips**, format/lint, unchanged workflow policy,
 public scan and audit with no known vulnerabilities.
 
 The local reporting command now requires normal registry manifests/locks and

@@ -3,6 +3,7 @@ import { chmod, lstat, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 import { TechnicalUserTokenManager, createCcv2Client } from '@commercekit-tools/ccv2-client';
 import { parseNotificationEventJson } from '@commercekit-tools/notification-contract';
+import { assertReportedInputs } from './reporting-inputs.mjs';
 import {
   approvedFixtureBuildCode,
   createApprovedBuildFixture,
@@ -212,6 +213,7 @@ export function assertActionRecord({ scenarioId, phase, outputs, outcome, run })
   assert.equal(outputs['poll-count'], String(result.pollCount));
   assert.equal(outputs['build-code'], result.buildCode ?? '');
   const build = phase === 'build';
+  assertReportedInputs(build ? 'ccv2-build' : 'ccv2-deploy', result, event);
   assert.equal(event.source.component, build ? 'ccv2-build' : 'ccv2-deploy');
   assert.equal(
     event.eventType,
@@ -320,14 +322,7 @@ export function nextDeployInputs(scenarioId, phase, records) {
 }
 
 /** Validate the actual bundled cleanup producer and observed target API calls. */
-export function assertCleanupRecord({
-  outputs,
-  outcome,
-  run,
-  state,
-  notificationStatus = 'failure',
-}) {
-  assert(['failure', 'warning'].includes(notificationStatus));
+export function assertCleanupRecord({ outputs, outcome, run, state }) {
   requireValue(outputs && typeof outputs['result-json'] === 'string');
   requireValue(typeof outputs['notification-event'] === 'string');
   for (const name of ['result-json', 'notification-event']) {
@@ -388,7 +383,18 @@ export function assertCleanupRecord({
       indexes.map(cleanupBuildCode),
     );
   assert.equal(event.eventType, 'ccv2.build-cleanup.completed');
-  assert.equal(event.status, notificationStatus);
+  assert.equal(event.status, 'warning');
+  assertReportedInputs('ccv2-build-cleanup', result, event);
+  assert.equal(event.data.protectedCount, result.counts.protected);
+  assert.equal(
+    event.data.blockedCount,
+    result.decisions.filter((decision) => decision.disposition === 'blocked').length,
+  );
+  assert(Array.isArray(event.data.issues));
+  assert.deepEqual(
+    event.data.issues.map((issue) => issue.code),
+    ['eligibility-unverified', 'protection-unverified'],
+  );
   assert.equal(event.source.component, 'ccv2-build-cleanup');
   assert.equal(event.occurredAt, result.runStartedAt);
   assert.equal(event.data.mode, 'dry-run');

@@ -133,7 +133,7 @@ payloads. Fixture/control operations are separate from Cleanup target mutations.
 - PASS: exact registry 0.0.6 frozen installation and downloaded artifact proof;
   focused registry guard tests reject file links/ranges/foreign registries and
   integrity drift.
-- PASS: complete ordinary normal-registry `pnpm quality`, 72 offline tests and
+- PASS: complete ordinary normal-registry `pnpm quality`, 76 offline tests and
   zero skips; formatting, lint, unchanged workflow policy, public scan and full
   dependency audit passed with no known vulnerabilities.
 - PASS: early combined five normal registry bundles on clean reviewed branch
@@ -146,9 +146,13 @@ payloads. Fixture/control operations are separate from Cleanup target mutations.
 - BLOCKED: real SAP apply eligibility, operational review and separate owner
   non-production/release approvals. Green tests do not authorize real deletion.
 
-Hosted workflow pins will be updated only to the actual reviewed merged main
-commits after their validation passes. No future/unmerged commit is presented
-as an adopted hosted Action. Package publication does not create an Action
+Hosted workflow pins now use the five actual reviewed merged main commits
+listed below. `action-inputs.json` records their public input names, extracted
+from each exact Action metadata file and bound to the matching ref in offline
+policy checks. Runtime assertions require every input, authentication masking,
+validation flags and event/result parity. Cleanup additionally requires warning
+severity with accurate protected/blocked counts and explicit safety issues.
+No future/unmerged commit is presented as an adopted hosted Action. Package publication does not create an Action
 release, Git tag, deployment or permission for SAP operations.
 
 ## Normal-registry preflight correction
@@ -167,3 +171,18 @@ The early registry run used clean normal Action source heads and real published
 `b1dd29a167289b083688b2ad45ddb492bcc5190a` with the parser correction dirty at
 execution time. The recorded runner-code hashes match the correction committed
 after validation. Final merged-main validation will be recorded separately.
+
+## Adopted immutable merged Action revisions
+
+| Action  | Adopted main commit                        |
+| ------- | ------------------------------------------ |
+| Setup   | `52a5a098d89f9ef2c42a234b4c3baa5d60a7a896` |
+| Build   | `a4e4ede0ffba3f3fec6b16ea1c2324375d383940` |
+| Deploy  | `9486574b5abc7a9d85ec2809b03a02380dcf7ee2` |
+| Cleanup | `8b1786b731be8d2d3fac137cd358d2ee5488bd58` |
+| Notify  | `abc752ead104a6e5153c5f166d04ee5e595e0ca6` |
+
+Each source was checked out separately at its exact main commit and installed
+with normal frozen registry dependencies. No owner working tree was replaced,
+no file:tarball dependency was used, and no hosted workflow was dispatched. The
+final all-five main replay is recorded after execution.

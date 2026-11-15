@@ -91,7 +91,7 @@ continue-on-delete-error=false, and **dry-run=true**. There is no apply input or
 schedule. `sandbox-e2e` main-only protection remains in use.
 
 The expected production-shaped result is blocked because eligibility evidence is
-unverified. Assertions require exact counts/reasons, valid contract 0.0.4 cleanup
+unverified. Assertions require exact counts/reasons, valid contract 0.0.6 cleanup
 events, matching repeat-run decisions and zero target API mutations. They also
 check listing counters to establish multi-page discovery. Fixture/control-plane
 operations do not count as target DELETE requests. The run is removed in an

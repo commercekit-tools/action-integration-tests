@@ -1,9 +1,9 @@
 {
   "actions/checkout": "3d3c42e5aac5ba805825da76410c181273ba90b1",
   "actions/setup-node": "949feb2413d6458794dcd2491c4babbbce0c15c1",
-  "commercekit-tools/ccv2-build": "923535d589bd8cebece4f3cbf479608f9535c4c3",
-  "commercekit-tools/ccv2-deploy": "e2b3f4cb7e03bfbcbba22eaf84545829b5629557",
-  "commercekit-tools/notify": "8242af6a4aaafd7917c93f0db27f1794266efeee",
-  "commercekit-tools/ccv2-build-cleanup": "4ab51d33ded51a360e8223e686bb46918cf7863f",
-  "commercekit-tools/setup-commercekit": "7f650f3162ab027bfd784cf879832f44d3248584"
+  "commercekit-tools/ccv2-build": "a4e4ede0ffba3f3fec6b16ea1c2324375d383940",
+  "commercekit-tools/ccv2-deploy": "9486574b5abc7a9d85ec2809b03a02380dcf7ee2",
+  "commercekit-tools/notify": "abc752ead104a6e5153c5f166d04ee5e595e0ca6",
+  "commercekit-tools/ccv2-build-cleanup": "8b1786b731be8d2d3fac137cd358d2ee5488bd58",
+  "commercekit-tools/setup-commercekit": "52a5a098d89f9ef2c42a234b4c3baa5d60a7a896"
 }

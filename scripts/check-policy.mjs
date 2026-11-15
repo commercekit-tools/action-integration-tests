@@ -21,6 +21,7 @@ export function readPolicyFiles() {
     ...readdirSync('.github/workflows').map((name) => `.github/workflows/${name}`),
     ...compositePaths,
     'action-refs.json',
+    'action-inputs.json',
   ];
   return Object.fromEntries(paths.map((path) => [path, readFileSync(path, 'utf8')]));
 }
@@ -31,6 +32,22 @@ export function validatePolicy(files) {
   const pins = JSON.parse(files['action-refs.json']);
   assert.equal(Object.keys(pins).length, 7, 'Unexpected Action dependency.');
   for (const sha of Object.values(pins)) assert.match(sha, /^[a-f0-9]{40}$/);
+  const metadata = JSON.parse(files['action-inputs.json']);
+  assert.deepEqual(
+    Object.keys(metadata).sort(),
+    Object.keys(pins)
+      .filter((name) => name.startsWith('commercekit-tools/'))
+      .sort(),
+  );
+  for (const [name, snapshot] of Object.entries(metadata)) {
+    assert.equal(snapshot.ref, pins[name], 'Input metadata must bind to the adopted Action ref.');
+    assert(
+      Array.isArray(snapshot.inputs) && snapshot.inputs.length > 0 && snapshot.inputs.length <= 50,
+    );
+    assert.equal(new Set(snapshot.inputs).size, snapshot.inputs.length);
+    assert(snapshot.inputs.every((input) => /^[a-z][a-z0-9-]{0,63}$/.test(input)));
+  }
+
   const docs = Object.fromEntries(
     [...workflowPaths, ...compositePaths].map((path) => [path, parse(files[path])]),
   );

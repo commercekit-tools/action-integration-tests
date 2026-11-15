@@ -4,6 +4,7 @@ import { chmod, lstat, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createBuildEvent, createDeploymentEvent } from '@commercekit-tools/notification-contract';
+import { fixtureInputs } from './reporting-fixtures.mjs';
 import { getScenario, makePlan, scenarioIds } from '../scripts/scenarios.mjs';
 import {
   assertActionRecord,
@@ -119,6 +120,7 @@ function actionOutputs(id, phase) {
     if (id === 'deploy-create-error')
       result.error = { code: 'CREATE_DEPLOYMENT_AMBIGUOUS', message: 'Synthetic create error.' };
   }
+  Object.assign(result, fixtureInputs(build ? 'ccv2-build' : 'ccv2-deploy', run));
   const event = build
     ? createBuildEvent({ status: outcome, data: result })
     : createDeploymentEvent({

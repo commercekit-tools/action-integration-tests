@@ -19,6 +19,10 @@ import {
 } from '../scripts/reporting-support.mjs';
 import { validateReporting } from '../scripts/validate-reporting.mjs';
 
+import { createBuildEvent } from '@commercekit-tools/notification-contract';
+import { assertReportedInputs, actionInputNames } from '../scripts/reporting-inputs.mjs';
+import { fixtureInputs } from './reporting-fixtures.mjs';
+
 function manifest() {
   const source = {
     sourcePath: join(tmpdir(), 'source'),
@@ -326,4 +330,51 @@ test('normal registry proof selects the pnpm 12 application graph and rejects am
     application.replace('9.0', '8.0'),
   ])
     assert.throws(() => parseRegistryLock(text));
+});
+
+test('adopted producer inputs require complete metadata, validation parity and confidential masking', () => {
+  const run = {
+    credentials: {
+      tokenUrl: 'https://sandbox.example.test/oauth2/token',
+      clientId: 'synthetic-client',
+      clientSecret: 'synthetic-secret',
+      resource: 'synthetic-resource',
+    },
+  };
+  const context = fixtureInputs('ccv2-build', run);
+  const result = { ...context };
+  const event = createBuildEvent({ status: 'success', data: result });
+  assertReportedInputs('ccv2-build', result, event);
+  assert.throws(() => actionInputNames('unknown'));
+  for (const mutate of [
+    (value, notification) => {
+      delete value.inputs['client-secret'];
+      delete notification.data.inputs['client-secret'];
+    },
+    (value, notification) => {
+      value.inputs['client-secret'] = notification.data.inputs['client-secret'] =
+        'unmasked-fixture';
+    },
+    (value, notification) => {
+      value.inputsValidated = notification.data.inputsValidated = false;
+    },
+    (value, notification) => {
+      value.inputsTruncated = notification.data.inputsTruncated = true;
+    },
+    (_value, notification) => {
+      notification.data.inputs['application-code'] = 'different-app';
+    },
+    (_value, notification) => {
+      notification.data.inputsValidated = false;
+    },
+    (value, notification) => {
+      value.inputs.branch = notification.data.inputs.branch =
+        'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzeW50aGV0aWMifQ.c3ludGhldGljLXNpZ25hdHVyZQ';
+    },
+  ]) {
+    const modified = structuredClone(result);
+    const notification = structuredClone(event);
+    mutate(modified, notification);
+    assert.throws(() => assertReportedInputs('ccv2-build', modified, notification));
+  }
 });

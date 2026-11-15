@@ -10,7 +10,7 @@ runs:
     - name: Execute cleanup dry-run
       id: action
       continue-on-error: true
-      uses: commercekit-tools/ccv2-build-cleanup@4ab51d33ded51a360e8223e686bb46918cf7863f
+      uses: commercekit-tools/ccv2-build-cleanup@8b1786b731be8d2d3fac137cd358d2ee5488bd58
       with:
         token-endpoint: ${{ env.CCV2_TOKEN_ENDPOINT }}
         client-id: ${{ env.CCV2_CLIENT_ID }}
