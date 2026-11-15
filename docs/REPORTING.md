@@ -154,7 +154,18 @@ payloads. Fixture/control operations are separate from Cleanup target mutations.
   were clean, four runs were removed with absence verified, both Cleanup
   passes had zero target mutations, Setup had zero network calls, and all
   16 provider calls were mock-only.
-- NOT RUN: new hosted Sandbox/provider workflows, real SAP validation.
+- PASS: the subsequent owner-authorized hosted build/check/approval/deploy run
+  [43681867766](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43681867766)
+  and cleanup dry-run/repeat run
+  [43681889413](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43681889413)
+  on main `ebc443e4f7b07f17a2a219c0b7214d25d4ad0d46`. Rendered summaries,
+  Build/Deploy/Cleanup notification outputs, masked inputs, native owner approval
+  and all three disposable-run removals were verified. Cleanup made zero target
+  mutations and provider delivery was disabled. See the detailed
+  [hosted validation report](VALIDATION.md), including the unexposed Setup event
+  and missing durable report-artifact limitations.
+- NOT RUN: original hosted smoke/full/provider suites, live provider delivery
+  and real SAP validation.
 - BLOCKED: real SAP apply eligibility, operational review and separate owner
   non-production/release approvals. Green tests do not authorize real deletion.
 
@@ -198,9 +209,10 @@ files. Final security-follow-up main validation is recorded separately.
 
 Each source was checked out separately at its exact main commit and installed
 with normal frozen registry dependencies. No owner working tree was replaced,
-no file:tarball dependency was used, and no hosted workflow was dispatched. The
-initial all-five main replay is archived above; the final security-follow-up
-main replay passed separately, with every source matching the adopted refs.
+no file:tarball dependency was used, and no hosted workflow was dispatched during
+that local replay. The initial all-five main replay is archived above; the final
+security-follow-up main replay passed separately, with every source matching
+the adopted refs.
 
 ## Post-merge security verification
 
@@ -263,10 +275,14 @@ checkouts; public package byte/SRI/schema/export proof ran before any target
 operation. The clean executed harness commit and runtime/source hashes remain
 in the evidence even though this later report-only commit adds the result file.
 
-No new hosted Sandbox workflow was dispatched. All provider delivery was
-mocked; no real SAP, production cleanup, deployment, Action release or Git tag
-was performed. Package 0.0.6 publication was separately authorized and completed
-as recorded above. Remaining gates are production SAP eligibility evidence,
-operational/non-production owner approval and any future Action release
-approval. Sandbox passes do not prove SAP deletion guarantees or authorize
-real deletion.
+During the local replay, no hosted workflow was dispatched and all provider
+delivery was mocked. The two later, separately authorized hosted workflows
+passed as recorded in [VALIDATION.md](VALIDATION.md), including an approved
+synthetic deployment within a disposable Sandbox run. Hosted provider delivery
+remained disabled. No real SAP, production cleanup, Sandbox Worker deployment,
+Action release or Git tag was performed. Package 0.0.6 publication was separately
+authorized and completed as recorded above. This docs follow-up does not publish,
+dispatch another Sandbox workflow or change runtime behavior. Remaining gates are
+production SAP eligibility evidence, operational/non-production owner approval
+and any future Action release approval. Sandbox passes do not prove SAP deletion
+guarantees or authorize real deletion.

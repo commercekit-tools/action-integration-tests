@@ -22,8 +22,9 @@ verified, both Cleanup passes made zero target mutations, Setup invalid input
 made zero network calls, and all 16 provider requests were mocked. See
 [final safe evidence](reporting-registry-main-evidence.json) and
 [current reporting evidence](REPORTING.md); prior
-source-candidate evidence remains [historical](REPORTING-CANDIDATES.md). New
-hosted dispatches and live provider/SAP validation have not run.
+source-candidate evidence remains [historical](REPORTING-CANDIDATES.md). The two
+current hosted Sandbox workflows also passed, as recorded below. Live provider
+delivery and real SAP validation remain NOT RUN.
 
 The final Build/Deploy pins include narrow test-only CodeQL corrections. Their
 initial green jobs had two/three processed findings; final exact-main analyses
@@ -31,6 +32,154 @@ now contain zero results and zero open alerts. All six repositories have green
 main validation/CodeQL and clear processed analyses. The combined report also
 records Setup's existing OrganizationAdmin merge exception, without suggesting
 that review was fabricated or protection changed.
+
+## Current hosted workflow results — 0.0.6
+
+**PASS:** the owner-authorized workflows each ran once on 2026-11-15 UTC from
+main `ebc443e4f7b07f17a2a219c0b7214d25d4ad0d46`, with
+`event=workflow_dispatch`, the exact Sandbox confirmation and `PROVIDER=none`.
+Both completed successfully. No workflow was retried to produce this evidence.
+
+| Workflow                                                                              | Hosted run                                                                                            | Dispatched (UTC) | Result |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------- | ------ |
+| Repository validation → CommerceKit check → cloud build → approval → synthetic deploy | [43681867766](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43681867766) | 05:37:18         | PASS   |
+| Cleanup dry-run, first and repeat                                                     | [43681889413](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43681889413) | 05:37:38         | PASS   |
+
+These workflows used published notification-contract **0.0.6** and ccv2-client
+**0.0.3**. The actual Action revisions were:
+
+| Action  | Immutable commit                           | Hosted execution                                           |
+| ------- | ------------------------------------------ | ---------------------------------------------------------- |
+| Setup   | `52a5a098d89f9ef2c42a234b4c3baa5d60a7a896` | Verified CLI installation                                  |
+| Build   | `fc65ee281f39b98d2cecad36ff93d40cf055fbc2` | Actual bundled build                                       |
+| Deploy  | `1af852b9a00e981da4ea13565bb18c7ce7fda27f` | Actual bundled deployment after approval                   |
+| Cleanup | `8b1786b731be8d2d3fac137cd358d2ee5488bd58` | Two actual bundled dry-runs                                |
+| Notify  | `abc752ead104a6e5153c5f166d04ee5e595e0ca6` | Pinned; not invoked because provider delivery was disabled |
+
+### Build, approval and deployment
+
+| Job                | Job ID         | Completed (UTC) | Verified behavior                                                                                    |
+| ------------------ | -------------- | --------------- | ---------------------------------------------------------------------------------------------------- |
+| `repository-build` | `132714011199` | 05:37:40        | Frozen install, 76 offline tests, complete quality gate and read-only approval preflight             |
+| `commerce-check`   | `132714079197` | 05:37:54        | Setup installed verified CLI 0.1.0-preview.2 on linux-x64; fixture check succeeded                   |
+| `cloud-build`      | `132714131019` | 05:38:21        | Build SUCCESS, result/event/input validation, public identifier handoff and source-run removal       |
+| `deploy`           | `132714226716` | 05:40:27        | Fresh approved fixture, actual DEPLOYED result/event, scoped server-state assertions and run removal |
+
+The run was observed waiting for `sandbox-deploy-approval`. GitHub's read-only
+review-history API records **approved** by **anilkreddy** for that environment.
+The deploy job started at **05:39:58 UTC**. The agent did not approve or bypass
+the gate. Required reviewer/main-only configuration and disabled administrator
+bypass were verified before dispatch; both workflow preflights passed.
+
+The actual source build was `20261115.1`. After its run was removed, the approved
+job recreated fixture `approved-20261115-1` in a fresh isolated run and deployed
+it as `700001`: **DEPLOYED**, environment `d1`, strategy `ROLLING_UPDATE`,
+database mode `NONE`. Only the validated public identifier crossed jobs.
+Final assertions checked authoritative deployment details, exactly one
+`createDeployment:d1`, no other deployment creation and zero Build creation
+calls in the approved run. No Build Action event was fabricated for the fixture.
+
+The CLI command was `commercekit check fixtures/commerce --format github`.
+The three committed inputs were `languages.impex`, `local.properties` and
+`manifest.json`; the step succeeded with no reported error/warning/notice
+diagnostics. This format emitted no JSON count report, so an independently
+observed CLI JSON file count is not claimed.
+
+### Cleanup and notification outputs
+
+Cleanup job `132714079466` passed at **05:38:01 UTC**, including both invocations,
+the repeated-decision/inventory assertion and final run removal. Each pass used
+explicit `dry-run: 'true'` and reported:
+
+| Result or count                                   | Each invocation       |
+| ------------------------------------------------- | --------------------- |
+| Cleanup status / mode                             | `blocked` / `dry-run` |
+| Scanned / skipped                                 | 105 / 105             |
+| Protected / blocked dispositions                  | 13 / 92               |
+| Eligible / planned / deferred                     | 0 / 0 / 0             |
+| Deletion requested / failed / unknown             | 0 / 0 / 0             |
+| Target API mutations                              | 0                     |
+| Inventory / protection / eligibility completeness | true / false / false  |
+
+Both actual cleanup events were **warning**, with issues
+`eligibility-unverified` and `protection-unverified`. The successful workflow
+asserted this specific safe blocked dry-run outcome; it did not suppress an
+unexpected failure. Per-build decisions/counts matched on repeat, and observed
+reads established all-page discovery. No target DELETE was attempted. Fixture
+creation and disposable-run control operations are separate from target mutations.
+
+| Actual event                   | Observed copies | Status    | Input names |
+| ------------------------------ | --------------- | --------- | ----------- |
+| `ccv2.build.completed`         | 1               | `success` | 11          |
+| `ccv2.deployment.completed`    | 1               | `success` | 21          |
+| `ccv2.build-cleanup.completed` | 2               | `warning` | 14 each     |
+
+The shared validator checked these real outputs. Safe result/event metadata was
+also independently parsed from completed job logs in memory. Every input name,
+effective non-confidential value, `inputsValidated=true`, `inputsTruncated=false`,
+workflow link and result/event input agreement was verified. `token-endpoint`,
+`client-id`, `client-secret` and `resource` were literal `[REDACTED]`; known
+credentials and JWT-like values were absent from the reported payloads. Cleanup
+mode/count/issue parity and Build/Deploy identity/status parity passed.
+
+Setup's installation and rendered summary were verified, but this workflow does
+not expose its notification-event output for direct payload inspection. A hosted
+Setup event-payload check is **NOT RUN**. Notify and Slack/Teams rendering or
+delivery were not executed by these workflows; earlier mocked local renderer
+results remain separate evidence.
+
+### Rendered GitHub summaries and retained evidence
+
+The authenticated GitHub run-summary pages were inspected in Safari after the
+owner identified the summary window. Their actual rendered accessibility trees
+contained semantic headings, real tables, safe workflow links and masked input
+values:
+
+- Setup: **✅ CommerceKit CLI Setup — Succeeded**, Result/Inputs/Workflow,
+  verified version `0.1.0-preview.2`, linux-x64 target and one version input.
+- Build: **✅ CCv2 Build — Succeeded**, Result/Inputs/Workflow, actual source
+  build code, all 11 inputs and the credential-free approval handoff explanation.
+- Deploy: **✅ CCv2 Deploy — Succeeded**, Result/Inputs/Workflow, actual fixture
+  and deployment identities, all 21 inputs and the approved synthetic-deploy note.
+- Both Cleanup passes: **⚠️ CCv2 build cleanup — DRY RUN — Completed with warnings**,
+  Result/Inputs/Issues/Safety evidence/Build decisions/Workflow; all 14 inputs,
+  accurate counts, both issue explanations and completeness flags. Each decision
+  table showed 50 bounded rows with an explicit truncation notice.
+
+All four authentication rows were visibly `[REDACTED]` in Build, Deploy and both
+Cleanup summaries. Completed producer logs contained no summary-write,
+notification-generation or output-contract warnings. The final harness summary
+also stated zero Cleanup target mutations and the safe blocked outcome.
+
+Neither workflow uploaded event/report artifacts. The full Cleanup report-path
+file was runner-temporary and is not available as a durable downloadable artifact;
+the summary's truncation notice must not be read as proof of such an upload.
+Run/job links, public summaries and safe assertion logs are the retained hosted
+evidence. No raw logs, credential objects, private run files or provider payloads
+were committed to this report.
+
+### Removal and remaining limits
+
+All three cleanup steps confirmed disposable-run removal and authenticated
+absence, requiring control-plane **DELETE 204 followed by GET 404**:
+
+| Disposable Sandbox run        | Confirmation (UTC) |
+| ----------------------------- | ------------------ |
+| Cleanup fixture               | 05:38:00.151       |
+| Source cloud-build            | 05:38:19.228       |
+| Approved recreated deployment | 05:40:25.603       |
+
+These confirmations come from the actual same-job controller assertions; no
+credentials were recovered for an extra probe. All CCv2 and Sandbox control-plane operations targeted only
+`https://ccv2.sandbox.commercekit.tools`. No live provider notifications or real
+SAP operations occurred. This docs follow-up does not dispatch another Sandbox run,
+publish, tag, deploy or change workflow/environment settings.
+
+**NOT RUN:** original hosted smoke/full/provider suites, live Slack/Teams sends,
+dedicated hosted cancellation/timeout scenarios and real SAP validation.
+**BLOCKED:** real SAP cleanup eligibility/operational evidence and separate
+owner authorization for non-production apply or Action release. Sandbox success
+does not prove SAP deletion guarantees or enable deletion.
 
 ## Historical 0.0.4 baseline and hosted workflow evidence
 
