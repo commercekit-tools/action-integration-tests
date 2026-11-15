@@ -17,7 +17,8 @@
     "policy": "node scripts/check-policy.mjs",
     "scan:public": "node scripts/scan-public.mjs",
     "audit": "pnpm audit --audit-level=high",
-    "quality": "pnpm format:check && pnpm lint && pnpm test && pnpm policy && pnpm scan:public && pnpm audit"
+    "quality": "pnpm format:check && pnpm lint && pnpm test && pnpm policy && pnpm scan:public && pnpm audit",
+    "candidate:reporting": "node scripts/validate-reporting-candidates.mjs"
   },
   "dependencies": {
     "@actions/core": "3.0.1",

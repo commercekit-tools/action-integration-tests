@@ -320,7 +320,14 @@ export function nextDeployInputs(scenarioId, phase, records) {
 }
 
 /** Validate the actual bundled cleanup producer and observed target API calls. */
-export function assertCleanupRecord({ outputs, outcome, run, state }) {
+export function assertCleanupRecord({
+  outputs,
+  outcome,
+  run,
+  state,
+  notificationStatus = 'failure',
+}) {
+  assert(['failure', 'warning'].includes(notificationStatus));
   requireValue(outputs && typeof outputs['result-json'] === 'string');
   requireValue(typeof outputs['notification-event'] === 'string');
   for (const name of ['result-json', 'notification-event']) {
@@ -381,7 +388,7 @@ export function assertCleanupRecord({ outputs, outcome, run, state }) {
       indexes.map(cleanupBuildCode),
     );
   assert.equal(event.eventType, 'ccv2.build-cleanup.completed');
-  assert.equal(event.status, 'failure');
+  assert.equal(event.status, notificationStatus);
   assert.equal(event.source.component, 'ccv2-build-cleanup');
   assert.equal(event.occurredAt, result.runStartedAt);
   assert.equal(event.data.mode, 'dry-run');

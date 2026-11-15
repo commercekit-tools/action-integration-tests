@@ -49,6 +49,16 @@ See [workflow setup, dispatch and limits](docs/WORKFLOWS.md). In particular,
 merged Sandbox source does not prove that the hosted `/cleanup-fixture` endpoint
 is deployed. Live workflow results are recorded separately from offline tests.
 
+## Consistent reporting candidate validation
+
+An opt-in [local candidate harness](docs/REPORTING-CANDIDATES.md) validates the
+five actual bundled Actions against an exact reviewed shared-contract tarball.
+It runs the existing synthetic scenarios in the local Sandbox, mocks provider
+fetches, and checks input coverage, secret masking, status icons/tables and
+notification/summary parity. It never dispatches hosted workflows or sends live
+provider messages. Normal CI and the SHA-pinned hosted workflows remain unchanged;
+unpublished source-candidate success is not registry or release readiness.
+
 ## Development
 
 Use Node 24 and pnpm 12.6.0, then configure local GitHub Packages read access as
