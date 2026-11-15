@@ -1,8 +1,97 @@
-# Workflow implementation validation — 2026-11-14
+# Workflow validation — updated 2026-11-15 (UTC)
 
-This record distinguishes offline/local validation from hosted manual workflow
-execution. No hosted Sandbox run, provider send, real SAP operation, release,
-tag, package publication or Sandbox Worker deployment was performed.
+This record distinguishes offline/local validation from owner-authorized hosted
+Sandbox execution. Both new manual workflows completed successfully after PR #1
+merged. No provider send, real SAP operation, release, tag, package publication or
+Sandbox Worker deployment was performed.
+
+## Hosted manual workflow results — 2026-11-15 UTC
+
+**PASS:** both workflows were dispatched once from main at exact merge commit
+`529d1bc46dbe33f7f99571e737744930e8fc67e9`, after
+[PR #1](https://github.com/commercekit-tools/action-integration-tests/pull/1)
+merged at **01:22:04 UTC**. Both report `event=workflow_dispatch`, the same
+`headSha`, and completed/success:
+
+| Workflow                                                          | Hosted run                                                                                            | Result |
+| ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------ |
+| Build → check → cloud build → approval → recreated Sandbox deploy | [43662830371](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43662830371) | PASS   |
+| Cleanup dry-run, first and repeat                                 | [43662832630](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43662832630) | PASS   |
+
+### Approval and actual deployment evidence
+
+| Job                | Job ID         | Completion (UTC) | Verified behavior                                                                                                                  |
+| ------------------ | -------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `repository-build` | `132655674053` | 01:23:14         | Frozen install, 62 offline tests/audit, read-only environment preflight passed                                                     |
+| `commerce-check`   | `132655744576` | 01:23:24         | Ubuntu setup of exact CLI 0.1.0-preview.2 and actual fixture check passed                                                          |
+| `cloud-build`      | `132655783401` | 01:23:55         | Actual Build result/event, public identifier handoff and source-run removal passed                                                 |
+| `deploy`           | `132655904047` | 01:26:26         | Post-approval protection recheck, fresh synthetic fixture, actual Deploy result/event/detail and scoped mutation assertions passed |
+
+The workflow was observed waiting at `sandbox-deploy-approval` after the cloud
+build. GitHub's review-history API records **approved** by **anilkreddy** for that
+environment (ID 27316488044). The deploy job started at **01:26:00 UTC**, after the
+owner approved through GitHub. No approval API write or administrator bypass was
+used by the agent. Both environment preflights succeeded using the workflow's
+read-only token. Native approval and the new jobs' package/metadata access are
+now verified rather than pending setup.
+
+The source build `20261115.1` completed with status SUCCESS. Its recreated fixture
+`approved-20261115-1` deployed as `700001` with status DEPLOYED.
+Only the validated public source build code crossed jobs. The original run was
+removed before the approval wait. After approval, the runner created a different
+isolated run and a mapped `approved-...` fixture; it did not preserve the original
+resource or fabricate a Build Action event. The actual pinned Deploy Action and
+its emitted event passed validation. Final assertions checked the server's
+DEPLOYED result, matching fixture identity, exactly one `createDeployment:d1`,
+no other deployment creation and zero Build creation API calls in the approved run.
+
+### Cleanup dry-run evidence
+
+Job `132655681208` completed successfully at **01:23:23 UTC**. Both actual Cleanup
+Action invocations passed the shared result/event validator with identical
+per-build decisions and counts:
+
+| Count/disposition                     | Each invocation |
+| ------------------------------------- | --------------: |
+| Scanned / skipped                     |       105 / 105 |
+| Protected dispositions                |              13 |
+| Eligible / planned / deferred         |       0 / 0 / 0 |
+| Deletion requested / failed / unknown |       0 / 0 / 0 |
+| Target API mutations                  |               0 |
+
+Both results were `blocked` with `dryRun=true`, inventory completeness true and
+protection/eligibility completeness false, matching the current production
+eligibility gate. Both actual events were `ccv2.build-cleanup.completed`, shared
+status=failure, mode=dry-run and deletionRequestedCount=0. A blocked dry-run is a
+handled successful Action execution in this fixture; the harness checked that
+specific expected outcome rather than ignoring errors. The final assertion
+verified both pages/passes, matching repeat decisions and read-only target
+counters. No build DELETE was attempted. Fixture/control operations are counted
+separately from target API mutations.
+
+### Removal of all disposable Sandbox runs
+
+All three final cleanup steps succeeded, and their logs explicitly confirm
+"Disposable Sandbox run deleted and absence verified." The shared controller
+requires control-plane DELETE 204 followed by GET 404 before printing that line:
+
+| Disposable run                    | Cleanup confirmation (UTC) |
+| --------------------------------- | -------------------------- |
+| Source cloud-build run            | 01:23:53.800               |
+| Approved recreated deployment run | 01:26:25.200               |
+| 105-build cleanup fixture run     | 01:23:20.092               |
+
+This verifies absence immediately after removal through the runner's authenticated
+follow-up read. No control/OAuth credentials, private run files or raw response
+bodies were recovered or committed for an extra outside-run probe.
+
+Evidence was independently checked from `gh run view` metadata/logs for both run
+IDs and the read-only `actions/runs/43662830371/approvals` API. Logs and existing
+controller assertions establish the results; no workflow was retried or dispatched
+again while monitoring. These two hosted paths now pass. The original live
+smoke/full/provider suites, live Slack/Teams delivery and real SAP validation are
+not claimed by this result. Real cleanup apply remains blocked by the unresolved
+SAP eligibility/operational evidence and separate owner approvals.
 
 ## Source and dependencies
 
@@ -21,20 +110,20 @@ tag, package publication or Sandbox Worker deployment was performed.
 
 ## Executed checks
 
-| Command/check                                                 | Status  | Evidence                                                                                                                                                                                                     |
-| ------------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Baseline `pnpm install --frozen-lockfile` and `pnpm quality`  | PASS    | 33 pre-change offline tests, all existing checks and audit passed                                                                                                                                            |
-| Registry query for `notification-contract@0.0.4`              | PASS    | Exact published version/integrity verified with authorized read access                                                                                                                                       |
-| Updated `pnpm install --frozen-lockfile`                      | PASS    | Registry-only reproducible lockfile, no local links or fake versions                                                                                                                                         |
-| Updated `pnpm quality`                                        | PASS    | Formatting, ESLint, 62 offline tests, workflow policy, public scan and dependency audit                                                                                                                      |
-| `actionlint .github/workflows/*.yml`                          | PASS    | Existing and new workflows linted with actionlint 1.7.12                                                                                                                                                     |
-| `git diff --check`                                            | PASS    | No whitespace errors                                                                                                                                                                                         |
-| Published CLI check of actual fixture files                   | PASS    | CLI 0.1.0-preview.2; three supported files, zero findings                                                                                                                                                    |
-| Actual Cleanup bundle against local Sandbox                   | PASS    | Exact consumer fixture and actual assertion function, two runs, matching decisions/counts, zero target mutations                                                                                             |
-| Actual Deploy bundle against local Sandbox                    | PASS    | Recreated mapped build fixture, successful actual result/event, one scoped deployment creation, zero Build API calls                                                                                         |
-| Configured environment read-back                              | PASS    | Required reviewer/main-only/no-bypass settings verified independently                                                                                                                                        |
-| Hosted ordinary PR CI on the implementation head              | PASS    | [Run 43632346842](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43632346842) on `2563fd12ad4d8588a002a7e3dd0f8ee22b69cffd`; 62 tests, frozen job-token install and audit passed |
-| Hosted manual build/check/approval/deploy or cleanup workflow | NOT RUN | No dispatch or hosted Sandbox fixture operations authorized/performed                                                                                                                                        |
+| Command/check                                                   | Status | Evidence                                                                                                                                                                                                     |
+| --------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Baseline `pnpm install --frozen-lockfile` and `pnpm quality`    | PASS   | 33 pre-change offline tests, all existing checks and audit passed                                                                                                                                            |
+| Registry query for `notification-contract@0.0.4`                | PASS   | Exact published version/integrity verified with authorized read access                                                                                                                                       |
+| Updated `pnpm install --frozen-lockfile`                        | PASS   | Registry-only reproducible lockfile, no local links or fake versions                                                                                                                                         |
+| Updated `pnpm quality`                                          | PASS   | Formatting, ESLint, 62 offline tests, workflow policy, public scan and dependency audit                                                                                                                      |
+| `actionlint .github/workflows/*.yml`                            | PASS   | Existing and new workflows linted with actionlint 1.7.12                                                                                                                                                     |
+| `git diff --check`                                              | PASS   | No whitespace errors                                                                                                                                                                                         |
+| Published CLI check of actual fixture files                     | PASS   | CLI 0.1.0-preview.2; three supported files, zero findings                                                                                                                                                    |
+| Actual Cleanup bundle against local Sandbox                     | PASS   | Exact consumer fixture and actual assertion function, two runs, matching decisions/counts, zero target mutations                                                                                             |
+| Actual Deploy bundle against local Sandbox                      | PASS   | Recreated mapped build fixture, successful actual result/event, one scoped deployment creation, zero Build creation API calls                                                                                |
+| Configured environment read-back                                | PASS   | Required reviewer/main-only/no-bypass settings verified independently                                                                                                                                        |
+| Hosted ordinary PR CI on the implementation head                | PASS   | [Run 43632346842](https://github.com/commercekit-tools/action-integration-tests/actions/runs/43632346842) on `2563fd12ad4d8588a002a7e3dd0f8ee22b69cffd`; 62 tests, frozen job-token install and audit passed |
+| Hosted manual build/check/approval/deploy and cleanup workflows | PASS   | Runs 43662830371 and 43662832630 on merged main 529d1bc; native approval, actual outputs/events and all disposable-run removals verified above                                                               |
 
 Final offline suite: **62 passed, zero failed/cancelled/skipped**. All existing
 16 scenario definitions and smoke/full/provider matrices remain unchanged.
@@ -68,9 +157,10 @@ execution. No global installation was made.
 - `commercekit check fixtures/commerce --json` returned success with three files:
   one each for ImpEx, Properties and Manifest; zero errors/warnings/infos.
 
-The manual workflow's Ubuntu setup/check execution remains NOT RUN. Availability
-of its release assets and passing setup-Action checks do not substitute for that
-workflow's execution.
+**PASS:** the manual workflow's Ubuntu setup/check execution is now verified by
+job `132655744576` in hosted run 43662830371. This is additional to the earlier
+native Darwin validation and confirms execution of the exact pinned setup Action
+and CLI against the committed fixtures.
 
 ## Actual local bundle evidence
 
@@ -115,14 +205,18 @@ policy, with no tag or wildcard rule. No permanent secrets were added. The nativ
 gate and the two read-only configuration preflights are documented in
 [WORKFLOWS.md](WORKFLOWS.md).
 
-A read-only GET of the public hosted `/openapi/sandbox.json` advertises
-`/sandbox/v1/runs/{runId}/cleanup-fixture` (OpenAPI 3.1.0/version 1.0.0). No hosted
-run was created to execute that handler. The web reader initially could not open
-this metadata URL; a bounded HTTPS curl read succeeded. Repository job-token package access is proven by the successful ordinary PR CI
-frozen install. Actual hosted fixture behavior, the new manual jobs' approval
-metadata access, Linux CLI execution, native approval,
-new hosted flow assertions and final hosted run cleanup remain **NOT RUN** until
-an explicitly authorized main-branch manual dispatch after review/merge.
+The initial read-only hosted OpenAPI inspection advertised
+`/sandbox/v1/runs/{runId}/cleanup-fixture`. The authorized hosted workflows now
+executed that handler successfully for the cleanup fixture and approved-build
+recreation. Repository/job-token frozen installs, environment metadata reads,
+Linux CLI checking, native human approval, actual Action assertions and final
+hosted run removal are **PASS** as recorded above.
+
+**NOT RUN:** the original hosted smoke/full/provider suites and actual
+Slack/Teams sends; dedicated hosted cancellation/network-timeout fixture tests;
+all real SAP read/dry-run/destructive validation. These results do not establish
+production SAP eligibility enforcement. No additional deployment or publication
+was performed to validate the report update.
 
 No real SAP credentials are needed or permitted in these workflows. The cleanup
 Action's unresolved production eligibility/operational evidence and owner release
