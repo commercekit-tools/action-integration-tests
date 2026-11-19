@@ -13,9 +13,10 @@ commits. This setup does not deploy the Sandbox or release any Action.
 3. Allow the declared `contents: read` and `packages: read` job permissions. The
    workflows need no contents-write, release, or package-publish permission.
 4. In each shared package's **Manage Actions access**, grant this repository
-   **Read** access to `notification-contract` and `ccv2-client`. The contract is pinned
-   exactly to `0.0.6` and the client to `0.0.3`. A successful install with an owner's local credential does
-   not prove the repository's workflow token has package access.
+   **Read** access to `notification-contract` and `ccv2-client`, using the
+   [declared package revisions](#action-and-package-revisions). The recorded hosted
+   workflows verified their job-token installs; an owner's local install alone would
+   not prove that access.
 5. Create/configure the environments below before the first live dispatch.
 
 The dependency installation step supplies the automatic
@@ -59,18 +60,23 @@ application repository is required.
 
 ## Action and package revisions
 
-The composite wrappers pin these reviewed Action commits:
+The [Action revision catalog](../action-refs.json) is the current authority for the
+reviewed immutable commits, including Build, Deploy, Notify, Cleanup and CLI Setup.
+The offline policy checks every workflow/composite reference against that catalog and binds
+the [input metadata snapshot](../action-inputs.json) to the same refs. Current setup guides
+link to these files instead of maintaining another SHA table.
 
-| Action | Commit                                     |
-| ------ | ------------------------------------------ |
-| Build  | `923535d589bd8cebece4f3cbf479608f9535c4c3` |
-| Deploy | `e2b3f4cb7e03bfbcbba22eaf84545829b5629557` |
-| Notify | `8242af6a4aaafd7917c93f0db27f1794266efeee` |
+The [package manifest](../package.json) declares the assertion helpers' exact versions;
+the [frozen lockfile](../pnpm-lock.yaml) records their registry resolutions. Shared package
+versions, CLI binary versions and Action release tags are separate version spaces. The
+committed Action bundles include their own dependencies; running a bundle alone does not
+require registry authentication.
 
-Their committed bundles already include their shared dependencies. Executing a
-bundle alone needs no registry authentication. This repository separately
-installs the shared packages because its assertion and Management API helpers
-reuse them. Package version `0.0.3` is not an Action release tag.
+The [dated validation record](VALIDATION.md#current-hosted-workflow-results--006) preserves
+the exact revisions that actually ran. Historical SHA tables remain evidence of those runs,
+not a second current pin catalog. Adopting a new ref does not transfer an older run's result
+to that ref: review the catalog, wrappers and input metadata together, run offline checks,
+then obtain separate authorization for any required live suite.
 
 ## Dispatch
 
@@ -106,9 +112,10 @@ gh workflow run integration.yml \
   -f provider-confirmation=SEND-COMMERCEKIT-TEST-NOTIFICATION
 ```
 
-These commands are instructions, not evidence of completed live runs. Initial
-repository creation and offline CI do not execute these suites. Scheduling and
-cross-repository automatic triggering are not configured.
+These commands are instructions, not evidence of completed live runs. The original
+`smoke`, `full` and `providers` suites remain **NOT RUN** in the recorded hosted evidence.
+The separate approval/deploy and cleanup workflows have passed as described below.
+Scheduling and cross-repository automatic triggering are not configured.
 
 ## What each job does
 
@@ -193,4 +200,8 @@ The additional `build-approve-deploy.yml` and `cleanup.yml` workflows are manual
 main-only Sandbox integrations. Their exact order, native approval environment,
 synthetic handoff, cleanup expectations and dispatch commands are in
 [WORKFLOWS.md](WORKFLOWS.md). No permanent SAP or Sandbox secrets are required.
-The existing smoke/full/provider suites and their environments remain unchanged.
+Both workflows [passed on November 15, 2026](VALIDATION.md#current-hosted-workflow-results--006)
+with provider delivery disabled. That evidence includes the owner approval, recreated
+synthetic build, shared result/event assertions and verified disposable-run removal.
+It does not cover the original smoke/full/provider matrix or live Slack/Teams delivery.
+Their existing environments and separate webhook/confirmation requirements remain unchanged.

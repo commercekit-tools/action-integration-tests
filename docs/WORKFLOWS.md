@@ -6,6 +6,10 @@ publish packages, tag releases, deploy the Sandbox Worker or enable real deletio
 Both run only after a deliberate `workflow_dispatch` on this repository's main
 branch with exact confirmation `RUN-COMMERCEKIT-SANDBOX-TESTS`.
 
+Use the [revision catalog and compatibility guide](SETUP.md#action-and-package-revisions)
+for current pins. The [dated validation record](VALIDATION.md#current-hosted-workflow-results--006)
+documents the hosted approval/deploy and cleanup workflows that passed on November 15, 2026.
+
 ## Build → check → cloud build → approval → synthetic deploy
 
 `build-approve-deploy.yml` has four ordered jobs:
@@ -66,7 +70,7 @@ gh api repos/commercekit-tools/action-integration-tests/environments/sandbox-dep
 gh api repos/commercekit-tools/action-integration-tests/environments/sandbox-deploy-approval/deployment-branch-policies
 ```
 
-After this workflow is reviewed and merged, dispatch deliberately:
+For a separately authorized future run, dispatch deliberately:
 
 ```sh
 gh workflow run build-approve-deploy.yml \
@@ -97,7 +101,7 @@ check listing counters to establish multi-page discovery. Fixture/control-plane
 operations do not count as target DELETE requests. The run is removed in an
 always-run final step, including partial preparation and assertion failures.
 
-After review/merge and hosted fixture capability verification:
+For a separately authorized future dry-run:
 
 ```sh
 gh workflow run cleanup.yml \
@@ -117,17 +121,22 @@ read-only permissions, exact Action/CLI pins, fixed origin, private lifecycle,
 credential-free handoff, actual shared event validation and zero-mutation cleanup
 assertions. See [VALIDATION.md](VALIDATION.md) for commands actually run.
 
-The hosted Sandbox must support `PUT /sandbox/v1/runs/{id}/cleanup-fixture`, which
-is present in the reviewed merged Sandbox source. A read-only check of the hosted public control OpenAPI also advertises this
-operation. That metadata read does not execute the fixture handler, and the
-Sandbox Worker was not deployed by this task. Hosted capability and end-to-end workflow execution are separate
-validation gates. Until a deliberately authorized run succeeds, do not claim
-that the hosted approval/deploy or cleanup integrations have passed. The first
-manual runs should be inspected for package-read access, fixture API support,
-actual approval behavior, Action assertions and successful final run removal.
+The recorded November 15 hosted runs verified the required
+`PUT /sandbox/v1/runs/{id}/cleanup-fixture` handler, job-token package access, native owner
+approval, actual Build/Deploy/Cleanup outputs and assertions, and removal of all three
+disposable runs. The approved deploy recreated a fixture in a fresh run; it did not preserve
+the original build resource. Both cleanup passes retained the expected blocked dry-run
+outcome and made zero target API mutations. See [VALIDATION.md](VALIDATION.md) for the exact
+tested source refs, run/job links and evidence limits.
+
+These are passes for the recorded revisions and configuration. After adopting new Action
+or Sandbox code, verify the relevant capability and assertions again through the separately
+authorized workflow. A public OpenAPI read can confirm an advertised contract, but cannot
+establish handler execution or fresh end-to-end success.
 
 The original Build/Deploy/Notify suites remain available through `integration.yml`.
-Live provider messages still require their separate confirmation and webhook
-setup; these two new workflows send no provider messages. Hard runner termination
+Their hosted smoke/full/provider matrix and live provider delivery remain **NOT RUN** in
+the current evidence. Provider messages still require their separate confirmation and webhook
+setup; the recorded approval/deploy and cleanup runs sent no provider messages. Hard runner termination
 can prevent final cleanup; the Sandbox's 24-hour expiry remains a fallback. None
 of this clears the cleanup Action's real-SAP eligibility/release gates.

@@ -12,9 +12,11 @@ temporary run files, provider payloads, or raw Sandbox state.
 
 Keep one scenario catalog and one shared run controller. Reuse the published
 contract validator and CCv2 client instead of copying schema, token, retry, or
-transport implementations. Actual Action pins belong in their existing
-composite wrappers; update those pins through reviewed changes and rerun the
-required integration suites before claiming the new revisions verified.
+transport implementations. Update the `action-refs.json` catalog, existing workflow/composite
+pins and `action-inputs.json` metadata together; the offline policy checks their agreement.
+Current setup guides link to that catalog, while dated validation reports retain the
+revisions they actually tested. Rerun the required integration suites with separate live-run
+authorization before claiming new revisions verified.
 
 Offline tests must inject network behavior and must not create Sandbox runs or
 send webhook requests. Live suites use the manual `integration.yml` workflow,

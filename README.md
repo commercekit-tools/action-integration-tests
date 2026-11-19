@@ -24,6 +24,11 @@ Start with [setup and dispatch](docs/SETUP.md). The [scenario reference](docs/SC
 defines expected negative outcomes and required assertions. Passing offline CI is
 not evidence that live Sandbox scenarios or provider delivery have passed.
 
+The separate approval/deploy and cleanup workflows have
+[recorded hosted passes](docs/VALIDATION.md#current-hosted-workflow-results--006).
+The original `smoke`, `full` and `providers` matrices, live Slack/Teams delivery and
+dedicated hosted cancellation/timeout scenarios remain **NOT RUN** in that evidence.
+
 ## Additional manual workflows
 
 | Workflow                                                               | Order and effect                                                                                                                                                                                 |
@@ -45,9 +50,10 @@ crosses jobs; source-run credentials are never exported or uploaded. Approval
 starts a fresh synthetic run, with the source code mapped to an `approved-...`
 fixture identifier because the Sandbox fixture API does not accept dots in keys.
 
-See [workflow setup, dispatch and limits](docs/WORKFLOWS.md). In particular,
-merged Sandbox source does not prove that the hosted `/cleanup-fixture` endpoint
-is deployed. Live workflow results are recorded separately from offline tests.
+See [workflow setup, dispatch and limits](docs/WORKFLOWS.md) and the
+[dated hosted results](docs/VALIDATION.md#current-hosted-workflow-results--006).
+Future Action or Sandbox changes require their own validation; the presence of a workflow
+or merged source does not establish a new hosted pass.
 
 ## Consistent reporting validation
 
@@ -71,12 +77,12 @@ pnpm install --frozen-lockfile
 pnpm quality
 ```
 
-Shared schema validation and CCv2 HTTP/authentication come from the existing
-`@commercekit-tools/notification-contract` and `@commercekit-tools/ccv2-client`
-packages, pinned to `0.0.6` and `0.0.3` respectively. These package versions are separate from Action
-versions. Action revisions are catalogued in `action-refs.json`. Producer pins live in
-the composite wrappers under `.github/actions/`; CLI setup is pinned in the
-build/approval workflow.
+The harness reuses `@commercekit-tools/notification-contract` and
+`@commercekit-tools/ccv2-client`. See the
+[revision and compatibility guide](docs/SETUP.md#action-and-package-revisions) for the
+current Action catalog, declared package versions, frozen resolutions and limits of prior
+run evidence. Producer refs remain in the policy-checked composite wrappers; CLI Setup is
+pinned in the build/approval workflow.
 
 See [Contributing](CONTRIBUTING.md), [agent guidance](AGENTS.md), and the
 [security policy](SECURITY.md) before changing the harness.
